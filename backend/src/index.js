@@ -24,6 +24,7 @@ app.use(express.json());
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const driverLocationRoutes = require('./api/driverLocation');
 app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
