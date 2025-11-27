@@ -11,11 +11,48 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { authService } from '../../services/authService';
+import { io } from 'socket.io-client';
 
 const DriverDashboard = () => {
     const navigate = useNavigate();
     const [user] = useState(authService.getCurrentUser());
-    const [isOnline, setIsOnline] = useState(true);
+    const [isOnline, setIsOnline] = useState(false);
+    const [socket, setSocket] = useState(null);
+
+    // Simulation interval ref
+    const intervalRef = React.useRef(null);
+
+    useEffect(() => {
+        const newSocket = io('http://localhost:5000');
+        setSocket(newSocket);
+        return () => newSocket.close();
+    }, []);
+
+    useEffect(() => {
+        if (isOnline && socket && user) {
+            // Simulate movement around Lagos
+            let lat = 6.5244;
+            let lng = 3.3792;
+
+            intervalRef.current = setInterval(() => {
+                lat += (Math.random() - 0.5) * 0.001;
+                lng += (Math.random() - 0.5) * 0.001;
+
+                socket.emit('driver_location_update', {
+                    driverId: user.id || 'driver-123', // Fallback for mock user
+                    name: user.fullName,
+                    plate: user.plateNumber || 'LAG-123-XY',
+                    location: { lat, lng }
+                });
+            }, 3000);
+        } else {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        }
+
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [isOnline, socket, user]);
     const [activeRequest, setActiveRequest] = useState({
         id: 1,
         patientName: "John Doe",

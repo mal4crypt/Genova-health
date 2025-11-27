@@ -27,6 +27,9 @@ function App() {
         <Router>
             <div className="min-h-screen bg-background text-text-primary font-sans antialiased">
                 <Routes>
+                    {/* Admin Route */}
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
                     {/* Onboarding */}
                     <Route path="/" element={<WelcomeScreen />} />
                     <Route path="/role-select" element={<RoleSelect />} />
