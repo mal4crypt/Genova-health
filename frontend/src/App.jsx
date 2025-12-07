@@ -14,7 +14,7 @@ import EnhancedAdminDashboard from './screens/admin/EnhancedAdminDashboard';
 import CreatePrescription from './screens/doctor/CreatePrescription';
 
 // Patient
-import PatientDashboard from './screens/patient/Dashboard';
+import PatientDashboard from './screens/patient/PatientDashboard';
 import PatientPrescriptions from './screens/patient/PatientPrescriptions';
 import PatientChat from './screens/patient/PatientChat';
 import MedicalRecordsTimeline from './screens/patient/MedicalRecordsTimeline';

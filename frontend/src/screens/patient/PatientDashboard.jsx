@@ -22,8 +22,12 @@ import NutritionAI from './NutritionAI';
 import FitnessAI from './FitnessAI';
 import HealthRecords from './HealthRecords';
 
+import { authService } from '../../services/authService';
+
 const PatientDashboard = () => {
     const navigate = useNavigate();
+    const user = authService.getCurrentUser();
+    const userName = user?.profile?.full_name || user?.email?.split('@')[0] || 'Patient';
 
     const features = [
         {
@@ -94,7 +98,7 @@ const PatientDashboard = () => {
                             JD
                         </div>
                         <div>
-                            <h1 className="font-bold text-gray-900">Hello, John</h1>
+                            <h1 className="font-bold text-gray-900">Hello, {userName}</h1>
                             <p className="text-xs text-gray-500">How are you feeling today?</p>
                         </div>
                     </div>

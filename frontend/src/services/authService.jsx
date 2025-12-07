@@ -1,65 +1,80 @@
-// Mock Auth Service
+import axios from 'axios';
 
-const USERS_KEY = 'genova_users';
-const CURRENT_USER_KEY = 'genova_current_user';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Create axios instance with default config
+const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// Add token to requests if available
+api.interceptors.request.use((config) => {
+    const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
+    if (user.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+    }
+    return config;
+});
 
 export const authService = {
-    // Register a new user
+    // Register
     register: async (userData) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-                const newUser = { ...userData, id: Date.now().toString() };
-                users.push(newUser);
-                localStorage.setItem(USERS_KEY, JSON.stringify(users));
-                localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-                resolve(newUser);
-            }, 1000);
-        });
+        try {
+            const response = await api.post('/auth/register', userData);
+            if (response.data.token) {
+                localStorage.setItem('genova_user', JSON.stringify(response.data));
+            }
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     },
 
-    // Login a user
+    // Login
     login: async (email, password, role) => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-                const user = users.find(u => u.email === email && u.password === password && u.role === role);
+        try {
+            // Special handling for driver login which uses driverId instead of email
+            const loginData = role === 'driver'
+                ? { driverId: email, password } // LoginDriver passes ID as first arg
+                : { email, password };
 
-                if (user) {
-                    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-                    resolve(user);
-                } else {
-                    // For demo purposes, allow login if user doesn't exist but credentials are "demo"/"demo"
-                    if (email === 'demo@genova.com' && password === 'demo') {
-                        const demoUser = {
-                            id: 'demo-123',
-                            name: 'Demo User',
-                            email,
-                            role,
-                            isVerified: true // Auto verify demo user
-                        };
-                        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(demoUser));
-                        resolve(demoUser);
-                    } else {
-                        reject(new Error('Invalid credentials'));
+            const response = await api.post('/auth/login', loginData);
+
+            if (response.data.token) {
+                // Verify role matches
+                if (response.data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
+                    // For now, strict role check
+                    if (response.data.role !== role) {
+                        throw { response: { data: { message: `Access denied. Not a ${role} account.` } } };
                     }
                 }
-            }, 1000);
-        });
+                localStorage.setItem('genova_user', JSON.stringify(response.data));
+            }
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     },
 
     // Logout
     logout: () => {
-        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem('genova_user');
+        window.location.href = '/login';
     },
 
     // Get current user
     getCurrentUser: () => {
-        return JSON.parse(localStorage.getItem(CURRENT_USER_KEY));
+        return JSON.parse(localStorage.getItem('genova_user'));
     },
 
-    // Check if user is authenticated
+    // Check if authenticated
     isAuthenticated: () => {
-        return !!localStorage.getItem(CURRENT_USER_KEY);
+        const user = JSON.parse(localStorage.getItem('genova_user'));
+        return !!user && !!user.token;
     }
 };
+
+export default api;
