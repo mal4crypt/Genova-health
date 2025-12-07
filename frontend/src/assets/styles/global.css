@@ -1,11 +1,78 @@
 :root {
-  --color-primary: #2E7D32;
-  --color-secondary: #4CAF50;
-  --color-highlight: #FFC107;
-  --color-background: #F5F7FA;
-  --color-text-primary: #1A1A1A;
-  --color-text-secondary: #4F4F4F;
-  --color-error: #D32F2F;
+  /* Primary Colors - Medical Trust */
+  --color-primary-50: #E8F5E9;
+  --color-primary-100: #C8E6C9;
+  --color-primary-200: #A5D6A7;
+  --color-primary-300: #81C784;
+  --color-primary-400: #66BB6A;
+  --color-primary-500: #4CAF50;
+  --color-primary-600: #43A047;
+  --color-primary-700: #388E3C;
+  --color-primary-800: #2E7D32;
+  --color-primary-900: #1B5E20;
+
+  /* Secondary Colors */
+  --color-secondary-500: #2196F3;
+  --color-secondary-700: #1976D2;
+
+  /* Semantic Colors */
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #F44336;
+  --color-info: #2196F3;
+
+  /* Neutral Colors */
+  --color-gray-50: #FAFAFA;
+  --color-gray-100: #F5F5F5;
+  --color-gray-200: #EEEEEE;
+  --color-gray-300: #E0E0E0;
+  --color-gray-400: #BDBDBD;
+  --color-gray-500: #9E9E9E;
+  --color-gray-600: #757575;
+  --color-gray-700: #616161;
+  --color-gray-800: #424242;
+  --color-gray-900: #212121;
+
+  /* Legacy Support */
+  --color-primary: var(--color-primary-700);
+  --color-secondary: var(--color-secondary-500);
+  --color-highlight: var(--color-warning);
+  --color-background: var(--color-gray-50);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+
+  /* Component Variables */
+  --card-bg: #FFFFFF;
+  --border-color: var(--color-gray-300);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  /* Inverted Colors */
+  --color-background: #121212;
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #B0B0B0;
+
+  /* Adjusted Primary for Dark Mode */
+  --color-primary: var(--color-primary-400);
+
+  /* Dark Mode Components */
+  --card-bg: #1E1E1E;
+  --border-color: #2C2C2C;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6);
+
+  /* Dark Neutrals */
+  --color-gray-50: #2C2C2C;
+  --color-gray-100: #3C3C3C;
+  --color-gray-200: #4C4C4C;
+  --color-gray-300: #5C5C5C;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -24,6 +91,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   overscroll-behavior: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Mobile-friendly scroll */
@@ -53,16 +121,16 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--color-gray-100);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--color-gray-400);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--color-gray-500);
 }
 
 /* Mobile: Hide scrollbar but keep functionality */
@@ -102,5 +170,96 @@ textarea {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Loading Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right,
+      var(--color-gray-200) 4%,
+      var(--color-gray-300) 25%,
+      var(--color-gray-200) 36%);
+  background-size: 1000px 100%;
+}
+
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(to right,
+      var(--color-gray-800) 4%,
+      var(--color-gray-700) 25%,
+      var(--color-gray-800) 36%);
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Slide Up Animation (for mobile modals) */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Focus Visible (Accessibility) */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-primary: #2E7D32;
+    --color-text-primary: #000000;
+    --border-color: #000000;
+  }
+
+  [data-theme="dark"] {
+    --color-text-primary: #FFFFFF;
+    --border-color: #FFFFFF;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
