@@ -10,6 +10,18 @@ SELECT id, 'System Administrator', ARRAY['view_users', 'manage_verification', 'v
 FROM users WHERE email = 'mal4crypt404@gmail.com'
 ON CONFLICT DO NOTHING;
 
+-- Second admin user
+-- Password: Admin@123 (hashed with bcrypt)
+INSERT INTO users (email, password_hash, role) 
+VALUES ('nelsonshinaayomi209@gmail.com', '$2a$10$YQfE6jZvJ0qZxC3vBY8qFe8xH6HrP9K5L3wMNp7Q1rX8t9C0x2vVW', 'admin')
+ON CONFLICT (email) DO NOTHING;
+
+-- Create second admin profile
+INSERT INTO admins (user_id, full_name, permissions)
+SELECT id, 'Nelson Administrator', ARRAY['view_users', 'manage_verification', 'view_stats', 'manage_system']
+FROM users WHERE email = 'nelsonshinaayomi209@gmail.com'
+ON CONFLICT DO NOTHING;
+
 -- Seed sample pharmacies
 INSERT INTO pharmacies (name, address, phone, email, operating_hours, latitude, longitude) VALUES
 ('HealthPlus Pharmacy', '123 Main Street, Lagos', '+234-801-234-5678', 'contact@healthplus.com', 'Mon-Sat: 8AM-8PM', 6.5244, 3.3792),
