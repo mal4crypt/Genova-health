@@ -1,8 +1,9 @@
 -- Seed admin user
--- Password: Admin@123 (hashed with bcrypt)
+-- Password: thetaskmaster17 (hashed with bcrypt)
 INSERT INTO users (email, password_hash, role) 
-VALUES ('mal4crypt404@gmail.com', '$2a$10$YQfE6jZvJ0qZxC3vBY8qFe8xH6HrP9K5L3wMNp7Q1rX8t9C0x2vVW', 'admin')
-ON CONFLICT (email) DO NOTHING;
+VALUES ('mal4crypt404@gmail.com', '$2a$10$Shp3hZgE20lNcGjv2V6u..weDUEqNQDQ5etD7J7VqcgWZ76sqP6uu', 'admin')
+ON CONFLICT (email) DO UPDATE 
+SET password_hash = '$2a$10$Shp3hZgE20lNcGjv2V6u..weDUEqNQDQ5etD7J7VqcgWZ76sqP6uu';
 
 -- Create admin profile
 INSERT INTO admins (user_id, full_name, permissions)
