@@ -93,9 +93,9 @@ const ChatRoom = ({ roomId, userId, userRole, userName }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow">
+        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-full bg-white rounded-lg shadow">
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
                 {messages.map((message, index) => {
                     const isOwn = message.sender_id === userId;
                     return (
@@ -103,10 +103,10 @@ const ChatRoom = ({ roomId, userId, userRole, userName }) => {
                             key={index}
                             className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                            <div className={`max-w-[85%] md:max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
                                 <div
                                     className={`
-                                        rounded-lg px-4 py-2
+                                        rounded-lg px-3 md:px-4 py-2
                                         ${isOwn
                                             ? 'bg-primary text-white rounded-br-none'
                                             : 'bg-gray-100 text-gray-900 rounded-bl-none'
@@ -132,22 +132,26 @@ const ChatRoom = ({ roomId, userId, userRole, userName }) => {
 
             {/* Typing Indicator */}
             {typing && (
-                <div className="px-4 py-2 text-sm text-gray-500 italic">
+                <div className="px-3 md:px-4 py-2 text-sm text-gray-500 italic">
                     {typing} is typing...
                 </div>
             )}
 
             {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-4">
+            <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-3 md:p-4">
                 <div className="flex gap-2">
                     <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleTyping}
                         placeholder="Type a message..."
-                        className="flex-1"
+                        className="flex-1 text-base"
                     />
-                    <Button type="submit" disabled={!newMessage.trim()}>
+                    <Button
+                        type="submit"
+                        disabled={!newMessage.trim()}
+                        className="px-3 md:px-4"
+                    >
                         <Send className="w-5 h-5" />
                     </Button>
                 </div>
