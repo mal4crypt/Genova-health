@@ -23,7 +23,7 @@ const LoginDoctor = () => {
             await authService.login(formData.email, formData.password, 'doctor');
             navigate('/doctor/dashboard');
         } catch (error) {
-            alert('Invalid credentials. Try demo@genova.com / demo');
+            alert(error.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
         }

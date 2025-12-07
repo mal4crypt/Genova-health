@@ -25,7 +25,7 @@ const LoginDriver = () => {
             await authService.login(formData.driverId, formData.password, 'driver');
             navigate('/driver/dashboard');
         } catch (error) {
-            alert('Invalid credentials. Try demo / demo');
+            alert(error.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
         }
