@@ -1,0 +1,76 @@
+# Build and run with Docker Compose
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: genova-db
+    environment:
+      POSTGRES_DB: genova_health
+      POSTGRES_USER: genova_admin
+      POSTGRES_PASSWORD: genova_secure_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/migrations/add_admin_features.sql:/docker-entrypoint-initdb.d/02-admin.sql
+      - ./database/migrations/add_ratings_system.sql:/docker-entrypoint-initdb.d/03-ratings.sql
+      - ./database/seeds/admin_seed.sql:/docker-entrypoint-initdb.d/04-seeds.sql
+    networks:
+      - genova-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genova_admin -d genova_health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: genova-api
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_USER: genova_admin
+      DB_PASSWORD: genova_secure_2024
+      DB_NAME: genova_health
+      DB_HOST: postgres
+      DB_PORT: 5432
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - genova-network
+    restart: unless-stopped
+
+  # Frontend (for development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: genova-frontend
+    environment:
+      VITE_API_URL: http://localhost:5000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - genova-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  genova-network:
+    driver: bridge
