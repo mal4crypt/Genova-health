@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const prisma = require('../config/prisma');
 
 // Create a new chat room
 exports.createChatRoom = async (req, res) => {
@@ -15,25 +15,31 @@ exports.createChatRoom = async (req, res) => {
         }
 
         // Check if room already exists
-        const existing = await pool.query(
-            `SELECT * FROM chat_rooms 
-             WHERE patient_id = $1 AND provider_id = $2 AND provider_type = $3 AND status = 'active'`,
-            [patientId, providerId, providerType]
-        );
+        const existing = await prisma.chatRoom.findFirst({
+            where: {
+                patient_id: parseInt(patientId),
+                provider_id: parseInt(providerId),
+                provider_type: providerType,
+                status: 'active'
+            }
+        });
 
-        if (existing.rows.length > 0) {
-            return res.json({ room: existing.rows[0] });
+        if (existing) {
+            return res.json({ room: existing });
         }
 
         // Create new room
-        const result = await pool.query(
-            `INSERT INTO chat_rooms (type, patient_id, provider_id, provider_type, status)
-             VALUES ($1, $2, $3, $4, 'active')
-             RETURNING *`,
-            [type, patientId, providerId, providerType]
-        );
+        const room = await prisma.chatRoom.create({
+            data: {
+                type,
+                patient_id: parseInt(patientId),
+                provider_id: parseInt(providerId),
+                provider_type: providerType,
+                status: 'active'
+            }
+        });
 
-        res.status(201).json({ room: result.rows[0] });
+        res.status(201).json({ room });
     } catch (error) {
         console.error('Create chat room error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -46,77 +52,58 @@ exports.getChatRooms = async (req, res) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
-        let query;
-        let params;
+        let whereClause = {};
 
         if (userRole === 'patient') {
-            // Get patient's ID
-            const patientResult = await pool.query(
-                'SELECT id FROM patients WHERE user_id = $1',
-                [userId]
-            );
-            const patientId = patientResult.rows[0]?.id;
-
-            query = `
-                SELECT cr.*, p.full_name as patient_name,
-                       CASE 
-                           WHEN cr.provider_type = 'doctor' THEN d.full_name
-                           WHEN cr.provider_type = 'nurse' THEN n.full_name
-                       END as provider_name,
-                       (SELECT COUNT(*) FROM chat_messages 
-                        WHERE room_id = cr.id AND is_read = false AND sender_type != 'patient') as unread_count
-                FROM chat_rooms cr
-                LEFT JOIN patients p ON cr.patient_id = p.id
-                LEFT JOIN doctors d ON cr.provider_id = d.id AND cr.provider_type = 'doctor'
-                LEFT JOIN nurses n ON cr.provider_id = n.id AND cr.provider_type = 'nurse'
-                WHERE cr.patient_id = $1
-                ORDER BY cr.last_message_at DESC
-            `;
-            params = [patientId];
+            const patient = await prisma.patient.findUnique({ where: { user_id: userId } });
+            if (!patient) return res.status(404).json({ message: 'Patient profile not found' });
+            whereClause = { patient_id: patient.id };
         } else if (userRole === 'doctor') {
-            // Get doctor's ID
-            const doctorResult = await pool.query(
-                'SELECT id FROM doctors WHERE user_id = $1',
-                [userId]
-            );
-            const doctorId = doctorResult.rows[0]?.id;
-
-            query = `
-                SELECT cr.*, p.full_name as patient_name, d.full_name as provider_name,
-                       (SELECT COUNT(*) FROM chat_messages 
-                        WHERE room_id = cr.id AND is_read = false AND sender_type = 'patient') as unread_count
-                FROM chat_rooms cr
-                JOIN patients p ON cr.patient_id = p.id
-                JOIN doctors d ON cr.provider_id = d.id
-                WHERE cr.provider_id = $1 AND cr.provider_type = 'doctor'
-                ORDER BY cr.last_message_at DESC
-            `;
-            params = [doctorId];
+            const doctor = await prisma.doctor.findUnique({ where: { user_id: userId } });
+            if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+            whereClause = { provider_id: doctor.id, provider_type: 'doctor' };
         } else if (userRole === 'nurse') {
-            // Get nurse's ID
-            const nurseResult = await pool.query(
-                'SELECT id FROM nurses WHERE user_id = $1',
-                [userId]
-            );
-            const nurseId = nurseResult.rows[0]?.id;
-
-            query = `
-                SELECT cr.*, p.full_name as patient_name, n.full_name as provider_name,
-                       (SELECT COUNT(*) FROM chat_messages 
-                        WHERE room_id = cr.id AND is_read = false AND sender_type = 'patient') as unread_count
-                FROM chat_rooms cr
-                JOIN patients p ON cr.patient_id = p.id
-                JOIN nurses n ON cr.provider_id = n.id
-                WHERE cr.provider_id = $1 AND cr.provider_type = 'nurse'
-                ORDER BY cr.last_message_at DESC
-            `;
-            params = [nurseId];
+            const nurse = await prisma.nurse.findUnique({ where: { user_id: userId } });
+            if (!nurse) return res.status(404).json({ message: 'Nurse profile not found' });
+            whereClause = { provider_id: nurse.id, provider_type: 'nurse' };
         } else {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
-        const result = await pool.query(query, params);
-        res.json({ rooms: result.rows });
+        const rooms = await prisma.chatRoom.findMany({
+            where: whereClause,
+            orderBy: { last_message_at: 'desc' },
+            include: {
+                patient: { select: { full_name: true } },
+                messages: {
+                    where: {
+                        is_read: false,
+                        sender_type: userRole === 'patient' ? { not: 'patient' } : 'patient'
+                    }
+                }
+            }
+        });
+
+        // Enhance rooms with provider names and unread counts
+        const enhancedRooms = await Promise.all(rooms.map(async (room) => {
+            let providerName = '';
+            if (room.provider_type === 'doctor') {
+                const doc = await prisma.doctor.findUnique({ where: { id: room.provider_id } });
+                providerName = doc ? doc.full_name : 'Unknown Doctor';
+            } else if (room.provider_type === 'nurse') {
+                const nurse = await prisma.nurse.findUnique({ where: { id: room.provider_id } });
+                providerName = nurse ? nurse.full_name : 'Unknown Nurse';
+            }
+
+            return {
+                ...room,
+                patient_name: room.patient.full_name,
+                provider_name: providerName,
+                unread_count: room.messages.length
+            };
+        }));
+
+        res.json({ rooms: enhancedRooms });
     } catch (error) {
         console.error('Get chat rooms error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -128,29 +115,32 @@ exports.getChatHistory = async (req, res) => {
     try {
         const { roomId } = req.params;
         const { limit = 50, offset = 0 } = req.query;
+        const id = parseInt(roomId);
 
-        // Verify user has access to this room
-        const room = await pool.query(
-            'SELECT * FROM chat_rooms WHERE id = $1',
-            [roomId]
-        );
+        // Verify user has access to this room (simplified check)
+        const room = await prisma.chatRoom.findUnique({ where: { id } });
 
-        if (room.rows.length === 0) {
+        if (!room) {
             return res.status(404).json({ message: 'Chat room not found' });
         }
 
         // Get messages
-        const messages = await pool.query(
-            `SELECT cm.*, u.email as sender_email
-             FROM chat_messages cm
-             JOIN users u ON cm.sender_id = u.id
-             WHERE cm.room_id = $1
-             ORDER BY cm.created_at ASC
-             LIMIT $2 OFFSET $3`,
-            [roomId, limit, offset]
-        );
+        const messages = await prisma.chatMessage.findMany({
+            where: { room_id: id },
+            orderBy: { created_at: 'asc' },
+            take: parseInt(limit),
+            skip: parseInt(offset),
+            include: {
+                sender: { select: { email: true } }
+            }
+        });
 
-        res.json({ messages: messages.rows });
+        const formattedMessages = messages.map(msg => ({
+            ...msg,
+            sender_email: msg.sender.email
+        }));
+
+        res.json({ messages: formattedMessages });
     } catch (error) {
         console.error('Get chat history error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -162,13 +152,15 @@ exports.markAsRead = async (req, res) => {
     try {
         const { roomId } = req.params;
         const userId = req.user.id;
+        const id = parseInt(roomId);
 
-        await pool.query(
-            `UPDATE chat_messages 
-             SET is_read = true 
-             WHERE room_id = $1 AND sender_id != $2`,
-            [roomId, userId]
-        );
+        await prisma.chatMessage.updateMany({
+            where: {
+                room_id: id,
+                sender_id: { not: userId }
+            },
+            data: { is_read: true }
+        });
 
         res.json({ message: 'Messages marked as read' });
     } catch (error) {
@@ -180,20 +172,22 @@ exports.markAsRead = async (req, res) => {
 // Save a message (used by Socket.io)
 exports.saveMessage = async (roomId, senderId, senderType, message) => {
     try {
-        const result = await pool.query(
-            `INSERT INTO chat_messages (room_id, sender_id, sender_type, message)
-             VALUES ($1, $2, $3, $4)
-             RETURNING *`,
-            [roomId, senderId, senderType, message]
-        );
+        const savedMessage = await prisma.chatMessage.create({
+            data: {
+                room_id: parseInt(roomId),
+                sender_id: parseInt(senderId),
+                sender_type: senderType,
+                message
+            }
+        });
 
         // Update room's last_message_at
-        await pool.query(
-            'UPDATE chat_rooms SET last_message_at = CURRENT_TIMESTAMP WHERE id = $1',
-            [roomId]
-        );
+        await prisma.chatRoom.update({
+            where: { id: parseInt(roomId) },
+            data: { last_message_at: new Date() }
+        });
 
-        return result.rows[0];
+        return savedMessage;
     } catch (error) {
         console.error('Save message error:', error);
         throw error;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
 
@@ -34,7 +34,7 @@ import MobileNav from './components/navigation/MobileNav';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -59,10 +59,10 @@ const AppLayout = ({ children, role }) => {
 };
 
 function App() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
 
     return (
-        <BrowserRouter>
+        <HashRouter>
             <ThemeProvider>
                 <ToastProvider>
                     <Routes>
@@ -231,7 +231,7 @@ function App() {
                     </Routes>
                 </ToastProvider>
             </ThemeProvider>
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 

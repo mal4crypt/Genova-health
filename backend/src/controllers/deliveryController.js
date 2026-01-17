@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const prisma = require('../config/prisma');
 
 // Create delivery order
 exports.createDeliveryOrder = async (req, res) => {
@@ -6,37 +6,41 @@ exports.createDeliveryOrder = async (req, res) => {
         const { prescriptionId, pharmacyId, deliveryAddress, deliveryPhone, notes } = req.body;
 
         // Get patient ID from user
-        const patientResult = await pool.query(
-            'SELECT id FROM patients WHERE user_id = $1',
-            [req.user.id]
-        );
+        const patient = await prisma.patient.findUnique({
+            where: { user_id: req.user.id }
+        });
 
-        if (patientResult.rows.length === 0) {
+        if (!patient) {
             return res.status(403).json({ message: 'Only patients can request delivery' });
         }
 
-        const patientId = patientResult.rows[0].id;
-
         // Verify prescription belongs to patient
-        const prescriptionCheck = await pool.query(
-            'SELECT * FROM prescriptions WHERE id = $1 AND patient_id = $2',
-            [prescriptionId, patientId]
-        );
+        const prescription = await prisma.prescription.findFirst({
+            where: {
+                id: parseInt(prescriptionId),
+                patient_id: patient.id
+            }
+        });
 
-        if (prescriptionCheck.rows.length === 0) {
+        if (!prescription) {
             return res.status(404).json({ message: 'Prescription not found' });
         }
 
         // Create delivery order
-        const result = await pool.query(
-            `INSERT INTO delivery_orders 
-             (prescription_id, patient_id, pharmacy_id, delivery_address, delivery_phone, notes, status, delivery_fee)
-             VALUES ($1, $2, $3, $4, $5, $6, 'pending', 1500.00)
-             RETURNING *`,
-            [prescriptionId, patientId, pharmacyId, deliveryAddress, deliveryPhone, notes]
-        );
+        const delivery = await prisma.deliveryOrder.create({
+            data: {
+                prescription_id: parseInt(prescriptionId),
+                patient_id: patient.id,
+                pharmacy_id: parseInt(pharmacyId),
+                delivery_address: deliveryAddress,
+                delivery_phone: deliveryPhone,
+                notes,
+                status: 'pending',
+                delivery_fee: 1500.00
+            }
+        });
 
-        res.status(201).json({ delivery: result.rows[0] });
+        res.status(201).json({ delivery });
     } catch (error) {
         console.error('Create delivery order error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -48,32 +52,36 @@ exports.assignDriver = async (req, res) => {
     try {
         const { deliveryId } = req.params;
         const { driverId } = req.body;
+        const id = parseInt(deliveryId);
+        const dId = parseInt(driverId);
 
         // Verify driver is online
-        const driverCheck = await pool.query(
-            'SELECT * FROM drivers WHERE id = $1 AND is_online = true',
-            [driverId]
-        );
+        const driver = await prisma.driver.findFirst({
+            where: {
+                id: dId,
+                is_online: true
+            }
+        });
 
-        if (driverCheck.rows.length === 0) {
+        if (!driver) {
             return res.status(400).json({ message: 'Driver not available' });
         }
 
-        const result = await pool.query(
-            `UPDATE delivery_orders 
-             SET driver_id = $1, status = 'assigned', assigned_at = CURRENT_TIMESTAMP
-             WHERE id = $2
-             RETURNING *`,
-            [driverId, deliveryId]
-        );
+        const delivery = await prisma.deliveryOrder.update({
+            where: { id },
+            data: {
+                driver_id: dId,
+                status: 'assigned',
+                assigned_at: new Date()
+            }
+        });
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Delivery order not found' });
-        }
-
-        res.json({ delivery: result.rows[0] });
+        res.json({ delivery });
     } catch (error) {
         console.error('Assign driver error:', error);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Delivery order not found' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -83,44 +91,45 @@ exports.updateDeliveryStatus = async (req, res) => {
     try {
         const { deliveryId } = req.params;
         const { status } = req.body;
+        const id = parseInt(deliveryId);
 
         const validStatuses = ['pending', 'assigned', 'picked_up', 'in_transit', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
         }
 
-        let updateFields = 'status = $1';
-        const params = [status, deliveryId];
+        const updateData = { status };
 
         // Update timestamps based on status
         if (status === 'picked_up') {
-            updateFields += ', picked_up_at = CURRENT_TIMESTAMP';
+            updateData.picked_up_at = new Date();
         } else if (status === 'delivered') {
-            updateFields += ', delivered_at = CURRENT_TIMESTAMP';
-            // Also update prescription status
-            await pool.query(
-                `UPDATE prescriptions 
-                 SET status = 'delivered' 
-                 WHERE id = (SELECT prescription_id FROM delivery_orders WHERE id = $1)`,
-                [deliveryId]
-            );
+            updateData.delivered_at = new Date();
         }
 
-        const result = await pool.query(
-            `UPDATE delivery_orders 
-             SET ${updateFields}
-             WHERE id = $2
-             RETURNING *`,
-            params
-        );
+        // Use transaction to update both delivery and prescription if delivered
+        const result = await prisma.$transaction(async (prisma) => {
+            const delivery = await prisma.deliveryOrder.update({
+                where: { id },
+                data: updateData
+            });
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Delivery order not found' });
-        }
+            if (status === 'delivered') {
+                await prisma.prescription.update({
+                    where: { id: delivery.prescription_id },
+                    data: { status: 'delivered' }
+                });
+            }
 
-        res.json({ delivery: result.rows[0] });
+            return delivery;
+        });
+
+        res.json({ delivery: result });
     } catch (error) {
         console.error('Update delivery status error:', error);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Delivery order not found' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -131,43 +140,58 @@ exports.getDriverDeliveries = async (req, res) => {
         const { status } = req.query;
 
         // Get driver ID from user
-        const driverResult = await pool.query(
-            'SELECT id FROM drivers WHERE user_id = $1',
-            [req.user.id]
-        );
+        const driver = await prisma.driver.findUnique({
+            where: { user_id: req.user.id }
+        });
 
-        if (driverResult.rows.length === 0) {
+        if (!driver) {
             return res.status(403).json({ message: 'Only drivers can access this' });
         }
 
-        const driverId = driverResult.rows[0].id;
-
-        let query = `
-            SELECT do.*, 
-                   p.full_name as patient_name,
-                   p.phone as patient_phone,
-                   pr.medication,
-                   pr.dosage,
-                   ph.name as pharmacy_name,
-                   ph.address as pharmacy_address,
-                   ph.phone as pharmacy_phone
-            FROM delivery_orders do
-            JOIN patients p ON do.patient_id = p.id
-            JOIN prescriptions pr ON do.prescription_id = pr.id
-            LEFT JOIN pharmacies ph ON do.pharmacy_id = ph.id
-            WHERE do.driver_id = $1
-        `;
-        const params = [driverId];
-
+        let whereClause = { driver_id: driver.id };
         if (status) {
-            query += ` AND do.status = $2`;
-            params.push(status);
+            whereClause.status = status;
         }
 
-        query += ` ORDER BY do.created_at DESC`;
+        const deliveries = await prisma.deliveryOrder.findMany({
+            where: whereClause,
+            orderBy: { created_at: 'desc' },
+            include: {
+                patient: {
+                    select: {
+                        full_name: true,
+                        phone: true
+                    }
+                },
+                prescription: {
+                    select: {
+                        medication: true,
+                        dosage: true
+                    }
+                },
+                pharmacy: {
+                    select: {
+                        name: true,
+                        address: true,
+                        phone: true
+                    }
+                }
+            }
+        });
 
-        const result = await pool.query(query, params);
-        res.json({ deliveries: result.rows });
+        // Flatten response
+        const formattedDeliveries = deliveries.map(d => ({
+            ...d,
+            patient_name: d.patient.full_name,
+            patient_phone: d.patient.phone,
+            medication: d.prescription.medication,
+            dosage: d.prescription.dosage,
+            pharmacy_name: d.pharmacy ? d.pharmacy.name : null,
+            pharmacy_address: d.pharmacy ? d.pharmacy.address : null,
+            pharmacy_phone: d.pharmacy ? d.pharmacy.phone : null
+        }));
+
+        res.json({ deliveries: formattedDeliveries });
     } catch (error) {
         console.error('Get driver deliveries error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -178,35 +202,51 @@ exports.getDriverDeliveries = async (req, res) => {
 exports.getPatientDeliveries = async (req, res) => {
     try {
         // Get patient ID from user
-        const patientResult = await pool.query(
-            'SELECT id FROM patients WHERE user_id = $1',
-            [req.user.id]
-        );
+        const patient = await prisma.patient.findUnique({
+            where: { user_id: req.user.id }
+        });
 
-        if (patientResult.rows.length === 0) {
+        if (!patient) {
             return res.status(403).json({ message: 'Only patients can access this' });
         }
 
-        const patientId = patientResult.rows[0].id;
+        const deliveries = await prisma.deliveryOrder.findMany({
+            where: { patient_id: patient.id },
+            orderBy: { created_at: 'desc' },
+            include: {
+                prescription: {
+                    select: {
+                        medication: true,
+                        dosage: true,
+                        frequency: true
+                    }
+                },
+                driver: {
+                    select: {
+                        full_name: true,
+                        plate_number: true
+                    }
+                },
+                pharmacy: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        });
 
-        const result = await pool.query(
-            `SELECT do.*, 
-                    pr.medication,
-                    pr.dosage,
-                    pr.frequency,
-                    d.full_name as driver_name,
-                    d.plate_number as driver_plate,
-                    ph.name as pharmacy_name
-             FROM delivery_orders do
-             JOIN prescriptions pr ON do.prescription_id = pr.id
-             LEFT JOIN drivers d ON do.driver_id = d.id
-             LEFT JOIN pharmacies ph ON do.pharmacy_id = ph.id
-             WHERE do.patient_id = $1
-             ORDER BY do.created_at DESC`,
-            [patientId]
-        );
+        // Flatten response
+        const formattedDeliveries = deliveries.map(d => ({
+            ...d,
+            medication: d.prescription.medication,
+            dosage: d.prescription.dosage,
+            frequency: d.prescription.frequency,
+            driver_name: d.driver ? d.driver.full_name : null,
+            driver_plate: d.driver ? d.driver.plate_number : null,
+            pharmacy_name: d.pharmacy ? d.pharmacy.name : null
+        }));
 
-        res.json({ deliveries: result.rows });
+        res.json({ deliveries: formattedDeliveries });
     } catch (error) {
         console.error('Get patient deliveries error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -217,24 +257,36 @@ exports.getPatientDeliveries = async (req, res) => {
 exports.trackDelivery = async (req, res) => {
     try {
         const { deliveryId } = req.params;
+        const id = parseInt(deliveryId);
 
-        const result = await pool.query(
-            `SELECT do.*, 
-                    d.full_name as driver_name,
-                    d.plate_number as driver_plate,
-                    d.current_location as driver_location,
-                    d.is_online as driver_online
-             FROM delivery_orders do
-             LEFT JOIN drivers d ON do.driver_id = d.id
-             WHERE do.id = $1`,
-            [deliveryId]
-        );
+        const delivery = await prisma.deliveryOrder.findUnique({
+            where: { id },
+            include: {
+                driver: {
+                    select: {
+                        full_name: true,
+                        plate_number: true,
+                        current_location: true,
+                        is_online: true
+                    }
+                }
+            }
+        });
 
-        if (result.rows.length === 0) {
+        if (!delivery) {
             return res.status(404).json({ message: 'Delivery not found' });
         }
 
-        res.json({ delivery: result.rows[0] });
+        // Flatten response
+        const formattedDelivery = {
+            ...delivery,
+            driver_name: delivery.driver ? delivery.driver.full_name : null,
+            driver_plate: delivery.driver ? delivery.driver.plate_number : null,
+            driver_location: delivery.driver ? delivery.driver.current_location : null,
+            driver_online: delivery.driver ? delivery.driver.is_online : null
+        };
+
+        res.json({ delivery: formattedDelivery });
     } catch (error) {
         console.error('Track delivery error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -244,15 +296,22 @@ exports.trackDelivery = async (req, res) => {
 // Get available drivers for assignment
 exports.getAvailableDrivers = async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT d.*, u.email
-             FROM drivers d
-             JOIN users u ON d.user_id = u.id
-             WHERE d.is_online = true
-             ORDER BY d.full_name`
-        );
+        const drivers = await prisma.driver.findMany({
+            where: { is_online: true },
+            orderBy: { full_name: 'asc' },
+            include: {
+                user: {
+                    select: { email: true }
+                }
+            }
+        });
 
-        res.json({ drivers: result.rows });
+        const formattedDrivers = drivers.map(d => ({
+            ...d,
+            email: d.user.email
+        }));
+
+        res.json({ drivers: formattedDrivers });
     } catch (error) {
         console.error('Get available drivers error:', error);
         res.status(500).json({ message: 'Server error' });

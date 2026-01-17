@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const prisma = require('../config/prisma');
 
 // Create prescription (doctors only)
 exports.createPrescription = async (req, res) => {
@@ -14,27 +14,30 @@ exports.createPrescription = async (req, res) => {
         } = req.body;
 
         // Get doctor's ID from user
-        const doctorResult = await pool.query(
-            'SELECT id FROM doctors WHERE user_id = $1',
-            [req.user.id]
-        );
+        const doctor = await prisma.doctor.findUnique({
+            where: { user_id: req.user.id }
+        });
 
-        if (doctorResult.rows.length === 0) {
+        if (!doctor) {
             return res.status(403).json({ message: 'Only doctors can create prescriptions' });
         }
 
-        const doctorId = doctorResult.rows[0].id;
-
         // Create prescription
-        const result = await pool.query(
-            `INSERT INTO prescriptions 
-             (doctor_id, patient_id, medication, dosage, frequency, duration, instructions, diagnosis, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
-             RETURNING *`,
-            [doctorId, patientId, medication, dosage, frequency, duration, instructions, diagnosis]
-        );
+        const prescription = await prisma.prescription.create({
+            data: {
+                doctor_id: doctor.id,
+                patient_id: parseInt(patientId),
+                medication,
+                dosage,
+                frequency,
+                duration,
+                instructions,
+                diagnosis,
+                status: 'pending'
+            }
+        });
 
-        res.status(201).json({ prescription: result.rows[0] });
+        res.status(201).json({ prescription });
     } catch (error) {
         console.error('Create prescription error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -48,60 +51,56 @@ exports.getPrescriptions = async (req, res) => {
         const userRole = req.user.role;
         const { status, limit = 20, offset = 0 } = req.query;
 
-        let query;
-        let params = [];
+        let whereClause = {};
 
         if (userRole === 'doctor') {
-            const doctorResult = await pool.query(
-                'SELECT id FROM doctors WHERE user_id = $1',
-                [userId]
-            );
-            const doctorId = doctorResult.rows[0]?.id;
-
-            query = `
-                SELECT p.*, 
-                       pt.full_name as patient_name,
-                       pt.phone as patient_phone,
-                       d.full_name as doctor_name
-                FROM prescriptions p
-                JOIN patients pt ON p.patient_id = pt.id
-                JOIN doctors d ON p.doctor_id = d.id
-                WHERE p.doctor_id = $1
-            `;
-            params = [doctorId];
+            const doctor = await prisma.doctor.findUnique({ where: { user_id: userId } });
+            if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+            whereClause = { doctor_id: doctor.id };
         } else if (userRole === 'patient') {
-            const patientResult = await pool.query(
-                'SELECT id FROM patients WHERE user_id = $1',
-                [userId]
-            );
-            const patientId = patientResult.rows[0]?.id;
-
-            query = `
-                SELECT p.*, 
-                       pt.full_name as patient_name,
-                       d.full_name as doctor_name,
-                       d.specialty as doctor_specialty
-                FROM prescriptions p
-                JOIN patients pt ON p.patient_id = pt.id
-                JOIN doctors d ON p.doctor_id = d.id
-                WHERE p.patient_id = $1
-            `;
-            params = [patientId];
+            const patient = await prisma.patient.findUnique({ where: { user_id: userId } });
+            if (!patient) return res.status(404).json({ message: 'Patient profile not found' });
+            whereClause = { patient_id: patient.id };
         } else {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
         // Add status filter if provided
         if (status) {
-            query += ` AND p.status = $${params.length + 1}`;
-            params.push(status);
+            whereClause.status = status;
         }
 
-        query += ` ORDER BY p.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-        params.push(limit, offset);
+        const prescriptions = await prisma.prescription.findMany({
+            where: whereClause,
+            orderBy: { created_at: 'desc' },
+            take: parseInt(limit),
+            skip: parseInt(offset),
+            include: {
+                patient: {
+                    select: {
+                        full_name: true,
+                        phone: true
+                    }
+                },
+                doctor: {
+                    select: {
+                        full_name: true,
+                        specialty: true
+                    }
+                }
+            }
+        });
 
-        const result = await pool.query(query, params);
-        res.json({ prescriptions: result.rows });
+        // Flatten response to match previous structure
+        const formattedPrescriptions = prescriptions.map(p => ({
+            ...p,
+            patient_name: p.patient.full_name,
+            patient_phone: p.patient.phone,
+            doctor_name: p.doctor.full_name,
+            doctor_specialty: p.doctor.specialty
+        }));
+
+        res.json({ prescriptions: formattedPrescriptions });
     } catch (error) {
         console.error('Get prescriptions error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -112,27 +111,44 @@ exports.getPrescriptions = async (req, res) => {
 exports.getPrescriptionById = async (req, res) => {
     try {
         const { prescriptionId } = req.params;
+        const id = parseInt(prescriptionId);
 
-        const result = await pool.query(
-            `SELECT p.*, 
-                    pt.full_name as patient_name,
-                    pt.phone as patient_phone,
-                    pt.allergies as patient_allergies,
-                    d.full_name as doctor_name,
-                    d.specialty as doctor_specialty,
-                    d.hospital as doctor_hospital
-             FROM prescriptions p
-             JOIN patients pt ON p.patient_id = pt.id
-             JOIN doctors d ON p.doctor_id = d.id
-             WHERE p.id = $1`,
-            [prescriptionId]
-        );
+        const prescription = await prisma.prescription.findUnique({
+            where: { id },
+            include: {
+                patient: {
+                    select: {
+                        full_name: true,
+                        phone: true,
+                        allergies: true
+                    }
+                },
+                doctor: {
+                    select: {
+                        full_name: true,
+                        specialty: true,
+                        hospital: true
+                    }
+                }
+            }
+        });
 
-        if (result.rows.length === 0) {
+        if (!prescription) {
             return res.status(404).json({ message: 'Prescription not found' });
         }
 
-        res.json({ prescription: result.rows[0] });
+        // Flatten response
+        const formattedPrescription = {
+            ...prescription,
+            patient_name: prescription.patient.full_name,
+            patient_phone: prescription.patient.phone,
+            patient_allergies: prescription.patient.allergies,
+            doctor_name: prescription.doctor.full_name,
+            doctor_specialty: prescription.doctor.specialty,
+            doctor_hospital: prescription.doctor.hospital
+        };
+
+        res.json({ prescription: formattedPrescription });
     } catch (error) {
         console.error('Get prescription error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -144,27 +160,24 @@ exports.updatePrescriptionStatus = async (req, res) => {
     try {
         const { prescriptionId } = req.params;
         const { status } = req.body;
+        const id = parseInt(prescriptionId);
 
         const validStatuses = ['pending', 'ready', 'dispensed', 'delivered'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
         }
 
-        const result = await pool.query(
-            `UPDATE prescriptions 
-             SET status = $1, updated_at = CURRENT_TIMESTAMP
-             WHERE id = $2
-             RETURNING *`,
-            [status, prescriptionId]
-        );
+        const prescription = await prisma.prescription.update({
+            where: { id },
+            data: { status }
+        });
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Prescription not found' });
-        }
-
-        res.json({ prescription: result.rows[0] });
+        res.json({ prescription });
     } catch (error) {
         console.error('Update prescription status error:', error);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Prescription not found' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -174,25 +187,28 @@ exports.getPharmacies = async (req, res) => {
     try {
         const { lat, lng, radius = 10 } = req.query;
 
-        let query = 'SELECT * FROM pharmacies';
-
-        // If coordinates provided, calculate distance
         if (lat && lng) {
-            query = `
+            // Use raw query for distance calculation as Prisma doesn't support geospatial queries natively yet
+            const latitude = parseFloat(lat);
+            const longitude = parseFloat(lng);
+            const distance = parseFloat(radius);
+
+            const pharmacies = await prisma.$queryRaw`
                 SELECT *,
-                       (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * 
-                       cos(radians(longitude) - radians($2)) + sin(radians($1)) * 
+                       (6371 * acos(cos(radians(${latitude})) * cos(radians(latitude)) * 
+                       cos(radians(longitude) - radians(${longitude})) + sin(radians(${latitude})) * 
                        sin(radians(latitude)))) AS distance
                 FROM pharmacies
-                HAVING distance < $3
+                WHERE (6371 * acos(cos(radians(${latitude})) * cos(radians(latitude)) * 
+                       cos(radians(longitude) - radians(${longitude})) + sin(radians(${latitude})) * 
+                       sin(radians(latitude)))) < ${distance}
                 ORDER BY distance
             `;
-            const result = await pool.query(query, [lat, lng, radius]);
-            return res.json({ pharmacies: result.rows });
+            return res.json({ pharmacies });
         }
 
-        const result = await pool.query(query);
-        res.json({ pharmacies: result.rows });
+        const pharmacies = await prisma.pharmacy.findMany();
+        res.json({ pharmacies });
     } catch (error) {
         console.error('Get pharmacies error:', error);
         res.status(500).json({ message: 'Server error' });

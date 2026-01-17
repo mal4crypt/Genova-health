@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Calendar } from 'lucide-react';
+import { Plus, FileText, Calendar, Clock, AlertCircle } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../components/ui/Toast';
 import EmptyState, { EmptyPrescriptions } from '../../components/ui/EmptyState';
+import PatientSearch from '../../components/doctor/PatientSearch';
+import Badge from '../../components/ui/Badge';
 
 const CreatePrescription = () => {
     const [showModal, setShowModal] = useState(false);
     const [prescriptions, setPrescriptions] = useState([]);
-    const [patients, setPatients] = useState([]);
+    const [selectedPatient, setSelectedPatient] = useState(null);
     const toast = useToast();
 
     const [formData, setFormData] = useState({
-        patientId: '',
         medication: '',
         dosage: '',
         frequency: '',
@@ -25,22 +26,32 @@ const CreatePrescription = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!selectedPatient) {
+            toast?.error('Please select a patient');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
+            const payload = {
+                ...formData,
+                patientId: selectedPatient.user_id // Ensure we send the correct ID type
+            };
+
             const response = await fetch('http://localhost:5000/api/prescriptions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
                 toast?.success('Prescription created successfully');
                 setShowModal(false);
                 setFormData({
-                    patientId: '',
                     medication: '',
                     dosage: '',
                     frequency: '',
@@ -48,6 +59,7 @@ const CreatePrescription = () => {
                     instructions: '',
                     diagnosis: ''
                 });
+                setSelectedPatient(null);
                 fetchPrescriptions();
             } else {
                 toast?.error('Failed to create prescription');
@@ -74,20 +86,77 @@ const CreatePrescription = () => {
         fetchPrescriptions();
     }, []);
 
+    const PrescriptionCard = ({ prescription }) => (
+        <Card className="p-6 hover:shadow-md transition-shadow border-l-4 border-l-primary-500">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                    <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-xl hidden md:block">
+                        <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                {prescription.medication}
+                            </h3>
+                            <Badge variant={prescription.status === 'active' ? 'success' : 'default'}>
+                                {prescription.status}
+                            </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1 gap-x-8 mb-3 text-sm">
+                            <p className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium text-gray-900 dark:text-gray-200">Patient:</span> {prescription.patient_name}
+                            </p>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium text-gray-900 dark:text-gray-200">Diagnosis:</span> {prescription.diagnosis || 'N/A'}
+                            </p>
+                        </div>
+
+                        <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg grid grid-cols-3 gap-2 text-sm mb-3">
+                            <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 uppercase tracking-wide">Dosage</span>
+                                <span className="font-medium">{prescription.dosage}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 uppercase tracking-wide">Freq</span>
+                                <span className="font-medium">{prescription.frequency}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 uppercase tracking-wide">Duration</span>
+                                <span className="font-medium">{prescription.duration}</span>
+                            </div>
+                        </div>
+
+                        {prescription.instructions && (
+                            <div className="flex gap-2 text-sm text-gray-600 dark:text-gray-400 bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded border border-yellow-100 dark:border-yellow-900/20">
+                                <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                <p>{prescription.instructions}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    <Clock className="w-3 h-3" />
+                    {new Date(prescription.created_at).toLocaleDateString()}
+                </div>
+            </div>
+        </Card>
+    );
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 pb-20 md:pb-6">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                            Prescriptions
+                            Prescription Management
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            Create and manage patient prescriptions
+                            Issue and track medical prescriptions for your patients
                         </p>
                     </div>
-                    <Button onClick={() => setShowModal(true)} className="w-full md:w-auto">
+                    <Button onClick={() => setShowModal(true)} className="w-full md:w-auto shadow-lg hover:shadow-xl transition-all">
                         <Plus className="w-5 h-5 mr-2" />
                         New Prescription
                     </Button>
@@ -99,37 +168,7 @@ const CreatePrescription = () => {
                 ) : (
                     <div className="grid gap-4">
                         {prescriptions.map((prescription) => (
-                            <Card key={prescription.id} className="p-6 hover:shadow-md transition-shadow">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-start gap-4 flex-1">
-                                        <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg">
-                                            <FileText className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                                {prescription.medication}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                                Patient: {prescription.patient_name}
-                                            </p>
-                                            <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                                <span>Dosage: {prescription.dosage}</span>
-                                                <span>Frequency: {prescription.frequency}</span>
-                                                <span>Duration: {prescription.duration}</span>
-                                            </div>
-                                            {prescription.diagnosis && (
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                                                    Diagnosis: {prescription.diagnosis}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Calendar className="w-4 h-4" />
-                                        {new Date(prescription.created_at).toLocaleDateString()}
-                                    </div>
-                                </div>
-                            </Card>
+                            <PrescriptionCard key={prescription.id} prescription={prescription} />
                         ))}
                     </div>
                 )}
@@ -138,36 +177,33 @@ const CreatePrescription = () => {
                 <Modal
                     isOpen={showModal}
                     onClose={() => setShowModal(false)}
-                    title="Create Prescription"
+                    title="Write New Prescription"
                     size="lg"
                 >
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Patient ID
+                                Select Patient
                             </label>
-                            <Input
-                                type="number"
-                                value={formData.patientId}
-                                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-                                placeholder="Enter patient ID"
-                                required
+                            <PatientSearch
+                                selectedPatient={selectedPatient}
+                                onSelect={setSelectedPatient}
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Medication Name
-                            </label>
-                            <Input
-                                value={formData.medication}
-                                onChange={(e) => setFormData({ ...formData, medication: e.target.value })}
-                                placeholder="e.g., Amoxicillin"
-                                required
-                            />
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Medication Name (Generic/Brand)
+                                </label>
+                                <Input
+                                    value={formData.medication}
+                                    onChange={(e) => setFormData({ ...formData, medication: e.target.value })}
+                                    placeholder="e.g., Amoxicillin 500mg"
+                                    required
+                                />
+                            </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Dosage
@@ -175,10 +211,11 @@ const CreatePrescription = () => {
                                 <Input
                                     value={formData.dosage}
                                     onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                                    placeholder="e.g., 500mg"
+                                    placeholder="e.g., 1 tablet"
                                     required
                                 />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Frequency
@@ -186,10 +223,11 @@ const CreatePrescription = () => {
                                 <Input
                                     value={formData.frequency}
                                     onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                                    placeholder="e.g., 3 times daily"
+                                    placeholder="e.g., Every 8 hours"
                                     required
                                 />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Duration
@@ -201,28 +239,28 @@ const CreatePrescription = () => {
                                     required
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Diagnosis (ICD-10 / Text)
+                                </label>
+                                <Input
+                                    value={formData.diagnosis}
+                                    onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+                                    placeholder="e.g., Acute Bronchitis"
+                                />
+                            </div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Diagnosis
-                            </label>
-                            <Input
-                                value={formData.diagnosis}
-                                onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
-                                placeholder="e.g., Bacterial infection"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Instructions
+                                Special Instructions / Notes
                             </label>
                             <textarea
                                 value={formData.instructions}
                                 onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                                placeholder="Additional instructions for the patient..."
-                                rows={4}
+                                placeholder="Take with food, avoid alcohol, etc."
+                                rows={3}
                                 className="
                                     w-full px-4 py-3 rounded-lg
                                     border border-gray-300 dark:border-gray-600
@@ -234,16 +272,16 @@ const CreatePrescription = () => {
                             />
                         </div>
 
-                        <div className="flex gap-3 justify-end pt-4">
+                        <div className="flex gap-3 justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
                             <Button
                                 type="button"
                                 onClick={() => setShowModal(false)}
-                                className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                                 Cancel
                             </Button>
                             <Button type="submit">
-                                Create Prescription
+                                Issue Prescription
                             </Button>
                         </div>
                     </form>

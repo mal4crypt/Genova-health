@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const prisma = require('../config/prisma');
 
 const doctorVerification = async (req, res, next) => {
     try {
@@ -7,12 +7,12 @@ const doctorVerification = async (req, res, next) => {
             return next();
         }
 
-        const result = await pool.query(
-            'SELECT is_verified FROM doctors WHERE user_id = $1',
-            [req.user.id]
-        );
+        const doctor = await prisma.doctor.findUnique({
+            where: { user_id: req.user.id },
+            select: { is_verified: true }
+        });
 
-        if (result.rows.length === 0 || !result.rows[0].is_verified) {
+        if (!doctor || !doctor.is_verified) {
             return res.status(403).json({
                 message: 'Account not verified. Please wait for admin verification.'
             });

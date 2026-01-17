@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -11,8 +11,11 @@ exports.register = async (req, res) => {
 
     try {
         // Check if user exists
-        const userCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userCheck.rows.length > 0) {
+        const userCheck = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (userCheck) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
@@ -20,41 +23,69 @@ exports.register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create User
-        const newUser = await db.query(
-            'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-            [email, hashedPassword, role]
-        );
-        const userId = newUser.rows[0].id;
+        // Create User and Profile in a transaction
+        const result = await prisma.$transaction(async (prisma) => {
+            const newUser = await prisma.user.create({
+                data: {
+                    email,
+                    password_hash: hashedPassword,
+                    role
+                }
+            });
 
-        // Create Role-Specific Profile
-        if (role === 'patient') {
-            await db.query(
-                'INSERT INTO patients (user_id, full_name, age, blood_group, genotype, height, weight, allergies, phone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                [userId, profileData.fullName, profileData.age, profileData.bloodGroup, profileData.genotype, profileData.height, profileData.weight, profileData.allergies, profileData.phone]
-            );
-        } else if (role === 'doctor') {
-            await db.query(
-                'INSERT INTO doctors (user_id, full_name, specialty, hospital, experience_years, license_number) VALUES ($1, $2, $3, $4, $5, $6)',
-                [userId, profileData.fullName, profileData.specialty, profileData.hospital, profileData.experience, profileData.licenseNumber]
-            );
-        } else if (role === 'nurse') {
-            await db.query(
-                'INSERT INTO nurses (user_id, full_name, registration_number, facility) VALUES ($1, $2, $3, $4)',
-                [userId, profileData.fullName, profileData.registrationNumber, profileData.facility]
-            );
-        } else if (role === 'driver') {
-            await db.query(
-                'INSERT INTO drivers (user_id, full_name, driver_id, plate_number) VALUES ($1, $2, $3, $4)',
-                [userId, profileData.fullName, profileData.driverId, profileData.plateNumber]
-            );
-        }
+            if (role === 'patient') {
+                await prisma.patient.create({
+                    data: {
+                        user_id: newUser.id,
+                        full_name: profileData.fullName,
+                        age: parseInt(profileData.age),
+                        blood_group: profileData.bloodGroup,
+                        genotype: profileData.genotype,
+                        height: parseFloat(profileData.height),
+                        weight: parseFloat(profileData.weight),
+                        allergies: profileData.allergies,
+                        phone: profileData.phone
+                    }
+                });
+            } else if (role === 'doctor') {
+                await prisma.doctor.create({
+                    data: {
+                        user_id: newUser.id,
+                        full_name: profileData.fullName,
+                        specialty: profileData.specialty,
+                        hospital: profileData.hospital,
+                        experience_years: parseInt(profileData.experience),
+                        license_number: profileData.licenseNumber
+                    }
+                });
+            } else if (role === 'nurse') {
+                await prisma.nurse.create({
+                    data: {
+                        user_id: newUser.id,
+                        full_name: profileData.fullName,
+                        registration_number: profileData.registrationNumber,
+                        facility: profileData.facility
+                    }
+                });
+            } else if (role === 'driver') {
+                await prisma.driver.create({
+                    data: {
+                        user_id: newUser.id,
+                        full_name: profileData.fullName,
+                        driver_id: profileData.driverId,
+                        plate_number: profileData.plateNumber
+                    }
+                });
+            }
+
+            return newUser;
+        });
 
         res.status(201).json({
-            id: userId,
-            email: newUser.rows[0].email,
-            role: newUser.rows[0].role,
-            token: generateToken(userId, role)
+            id: result.id,
+            email: result.email,
+            role: result.role,
+            token: generateToken(result.id, role)
         });
 
     } catch (error) {
@@ -67,36 +98,40 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
 
-        if (user.rows.length === 0) {
+        if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.rows[0].password_hash);
+        const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const role = user.rows[0].role;
-        let profile;
+        const role = user.role;
+        let profile = null;
 
         if (role === 'patient') {
-            profile = await db.query('SELECT * FROM patients WHERE user_id = $1', [user.rows[0].id]);
+            profile = await prisma.patient.findUnique({ where: { user_id: user.id } });
         } else if (role === 'doctor') {
-            profile = await db.query('SELECT * FROM doctors WHERE user_id = $1', [user.rows[0].id]);
+            profile = await prisma.doctor.findUnique({ where: { user_id: user.id } });
         } else if (role === 'nurse') {
-            profile = await db.query('SELECT * FROM nurses WHERE user_id = $1', [user.rows[0].id]);
+            profile = await prisma.nurse.findUnique({ where: { user_id: user.id } });
         } else if (role === 'driver') {
-            profile = await db.query('SELECT * FROM drivers WHERE user_id = $1', [user.rows[0].id]);
+            profile = await prisma.driver.findUnique({ where: { user_id: user.id } });
+        } else if (role === 'admin') {
+            profile = await prisma.admin.findUnique({ where: { user_id: user.id } });
         }
 
         res.json({
-            id: user.rows[0].id,
-            email: user.rows[0].email,
+            id: user.id,
+            email: user.email,
             role: role,
-            profile: profile.rows[0],
-            token: generateToken(user.rows[0].id, role)
+            profile: profile,
+            token: generateToken(user.id, role)
         });
 
     } catch (error) {

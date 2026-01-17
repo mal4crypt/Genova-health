@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password_hash String
+  role          String    // 'patient', 'doctor', 'nurse', 'driver', 'admin'
+  created_at    DateTime  @default(now())
+
+  patient       Patient?
+  doctor        Doctor?
+  nurse         Nurse?
+  driver        Driver?
+  admin         Admin?
+  
+  sent_messages ChatMessage[]
+  ratings_given Rating[]
+  rating_reports RatingReport[]
+
+  @@map("users")
+}
+
+model Patient {
+  id            Int       @id @default(autoincrement())
+  user_id       Int       @unique
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name     String
+  age           Int?
+  blood_group   String?
+  genotype      String?
+  height        Decimal?  @db.Decimal(5, 2)
+  weight        Decimal?  @db.Decimal(5, 2)
+  allergies     String?
+  phone         String?
+
+  prescriptions   Prescription[]
+  chat_rooms      ChatRoom[]
+  delivery_orders DeliveryOrder[]
+
+  @@map("patients")
+}
+
+model Doctor {
+  id               Int       @id @default(autoincrement())
+  user_id          Int       @unique
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name        String
+  specialty        String
+  hospital         String?
+  experience_years Int?
+  license_number   String    @unique
+  is_verified      Boolean   @default(false)
+
+  prescriptions    Prescription[]
+  
+  @@map("doctors")
+}
+
+model Nurse {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int       @unique
+  user                User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name           String
+  registration_number String    @unique
+  facility            String?
+  is_verified         Boolean   @default(false)
+
+  @@map("nurses")
+}
+
+model Driver {
+  id              Int       @id @default(autoincrement())
+  user_id         Int       @unique
+  user            User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name       String
+  driver_id       String    @unique
+  plate_number    String
+  is_online       Boolean   @default(false)
+  current_location String?
+
+  delivery_orders DeliveryOrder[]
+
+  @@map("drivers")
+}
+
+model Admin {
+  id          Int      @id @default(autoincrement())
+  user_id     Int      @unique
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name   String
+  permissions String[]
+
+  @@map("admins")
+}
+
+model Pharmacy {
+  id              Int       @id @default(autoincrement())
+  name            String
+  address         String
+  phone           String?
+  email           String?
+  operating_hours String?
+  latitude        Decimal?  @db.Decimal(10, 8)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  created_at      DateTime  @default(now())
+
+  delivery_orders DeliveryOrder[]
+
+  @@map("pharmacies")
+}
+
+model Prescription {
+  id           Int       @id @default(autoincrement())
+  doctor_id    Int
+  doctor       Doctor    @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  patient_id   Int
+  patient      Patient   @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  medication   String
+  dosage       String
+  frequency    String
+  duration     String
+  instructions String?
+  diagnosis    String?
+  status       String    @default("pending") // 'pending', 'ready', 'dispensed', 'delivered'
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @default(now()) @updatedAt
+
+  delivery_orders DeliveryOrder[]
+
+  @@map("prescriptions")
+}
+
+model ChatRoom {
+  id            Int       @id @default(autoincrement())
+  type          String    // 'doctor-patient', 'nurse-patient'
+  patient_id    Int
+  patient       Patient   @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  provider_id   Int
+  provider_type String    // 'doctor', 'nurse'
+  status        String    @default("active") // 'active', 'closed'
+  created_at    DateTime  @default(now())
+  last_message_at DateTime @default(now())
+
+  messages      ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id          Int       @id @default(autoincrement())
+  room_id     Int
+  room        ChatRoom  @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  sender_id   Int
+  sender      User      @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  sender_type String    // 'patient', 'doctor', 'nurse'
+  message     String
+  is_read     Boolean   @default(false)
+  created_at  DateTime  @default(now())
+
+  @@map("chat_messages")
+}
+
+model DeliveryOrder {
+  id               Int       @id @default(autoincrement())
+  prescription_id  Int?
+  prescription     Prescription? @relation(fields: [prescription_id], references: [id], onDelete: Cascade)
+  patient_id       Int?
+  patient          Patient?      @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  driver_id        Int?
+  driver           Driver?       @relation(fields: [driver_id], references: [id])
+  pharmacy_id      Int?
+  pharmacy         Pharmacy?     @relation(fields: [pharmacy_id], references: [id])
+  delivery_address String
+  delivery_phone   String?
+  status           String    @default("pending") // 'pending', 'assigned', 'picked_up', 'in_transit', 'delivered', 'cancelled'
+  delivery_fee     Decimal?  @db.Decimal(10, 2)
+  notes            String?
+  created_at       DateTime  @default(now())
+  assigned_at      DateTime?
+  picked_up_at     DateTime?
+  delivered_at     DateTime?
+
+  @@map("delivery_orders")
+}
+
+model Rating {
+  id              Int       @id @default(autoincrement())
+  rating_type     String    // 'doctor', 'driver', 'pharmacy'
+  rated_entity_id Int
+  rater_user_id   Int
+  rater           User      @relation(fields: [rater_user_id], references: [id])
+  rating          Int
+  review_text     String?
+  helpful_count   Int       @default(0)
+  flagged         Boolean   @default(false)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+  
+  reports         RatingReport[]
+
+  @@unique([rating_type, rated_entity_id, rater_user_id])
+  @@map("ratings")
+}
+
+model RatingAggregate {
+  id             Int       @id @default(autoincrement())
+  rating_type    String
+  entity_id      Int
+  average_rating Decimal?  @db.Decimal(3, 2)
+  total_ratings  Int       @default(0)
+  rating_5_count Int       @default(0)
+  rating_4_count Int       @default(0)
+  rating_3_count Int       @default(0)
+  rating_2_count Int       @default(0)
+  rating_1_count Int       @default(0)
+  last_updated   DateTime  @default(now())
+
+  @@unique([rating_type, entity_id])
+  @@map("rating_aggregates")
+}
+
+model RatingReport {
+  id               Int       @id @default(autoincrement())
+  rating_id        Int?
+  rating           Rating?   @relation(fields: [rating_id], references: [id])
+  reporter_user_id Int?
+  reporter         User?     @relation(fields: [reporter_user_id], references: [id])
+  reason           String
+  status           String    @default("pending") // 'pending', 'resolved', 'dismissed'
+  created_at       DateTime  @default(now())
+
+  @@map("rating_reports")
+}

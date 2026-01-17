@@ -1,5 +1,8 @@
 {
   "appId": "com.genovahealth.app",
   "appName": "Genova Health",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
 }
