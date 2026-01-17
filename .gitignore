@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+*.lock
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android/iOS builds
+frontend/android/app/build/
+frontend/ios/App/build/
+frontend/capacitor/
+
+# Firebase
+.firebase/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
