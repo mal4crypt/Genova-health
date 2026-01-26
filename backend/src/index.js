@@ -33,6 +33,9 @@ const videoRoutes = require('./routes/videoRoutes');
 const fitnessRoutes = require('./routes/fitnessRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const driverLocationRoutes = require('./api/driverLocation');
 
 app.use('/api/auth', authRoutes);
@@ -45,6 +48,9 @@ app.use('/api/video', videoRoutes);
 app.use('/api/fitness', fitnessRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/', (req, res) => {
     res.send('Genova Health API is running');
