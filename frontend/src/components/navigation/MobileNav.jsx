@@ -11,7 +11,7 @@ const MobileNav = ({ role = 'patient' }) => {
             { icon: Home, label: 'Home', path: '/patient/dashboard' },
             { icon: Calendar, label: 'Appointments', path: '/patient/book-doctor' },
             { icon: MessageCircle, label: 'Chat', path: '/patient/chat' },
-            { icon: User, label: 'Profile', path: '/patient/health-records' },
+            { icon: User, label: 'Profile', path: '/patient/records' },
         ],
         doctor: [
             { icon: Home, label: 'Home', path: '/doctor/dashboard' },

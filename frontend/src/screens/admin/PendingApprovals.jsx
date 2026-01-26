@@ -23,8 +23,8 @@ const PendingApprovals = () => {
         try {
             const token = localStorage.getItem('token');
             const [docRes, nurseRes] = await Promise.all([
-                fetch('http://localhost:5000/api/admin/users/doctor', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:5000/api/admin/users/nurse', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/doctor`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/nurse`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             const docData = await docRes.json();
@@ -43,7 +43,7 @@ const PendingApprovals = () => {
     const handleVerify = async (id, type) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://localhost:5000/api/admin/verify/${type}/${id}`, {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/verify/${type}/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

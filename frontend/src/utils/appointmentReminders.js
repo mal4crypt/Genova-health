@@ -53,7 +53,7 @@ export const sendAppointmentReminder = async (appointment, type = 'sms') => {
 
         if (type === 'sms') {
             // Integrate with Twilio or similar SMS service
-            await fetch('http://localhost:5000/api/notifications/sms', {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/sms`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -66,7 +66,7 @@ export const sendAppointmentReminder = async (appointment, type = 'sms') => {
             });
         } else if (type === 'email') {
             // Integrate with SendGrid or similar email service
-            await fetch('http://localhost:5000/api/notifications/email', {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/email`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

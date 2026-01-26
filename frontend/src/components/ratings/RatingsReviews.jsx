@@ -23,8 +23,8 @@ const RatingStars = ({ rating, onChange, readonly = false }) => {
                 >
                     <Star
                         className={`w-6 h-6 ${star <= (hover || rating)
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300 dark:text-gray-600'
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300 dark:text-gray-600'
                             }`}
                     />
                 </button>
@@ -66,7 +66,7 @@ const RatingsReviews = ({ entityType, entityId, entityName }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `http://localhost:5000/api/ratings/${entityType}/${entityId}`,
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ratings/${entityType}/${entityId}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
             const data = await response.json();
@@ -81,7 +81,7 @@ const RatingsReviews = ({ entityType, entityId, entityName }) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/ratings', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ratings`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -112,7 +112,7 @@ const RatingsReviews = ({ entityType, entityId, entityName }) => {
     const markHelpful = async (ratingId) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://localhost:5000/api/ratings/${ratingId}/helpful`, {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ratings/${ratingId}/helpful`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -126,7 +126,7 @@ const RatingsReviews = ({ entityType, entityId, entityName }) => {
     const reportReview = async (ratingId) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://localhost:5000/api/ratings/${ratingId}/report`, {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ratings/${ratingId}/report`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

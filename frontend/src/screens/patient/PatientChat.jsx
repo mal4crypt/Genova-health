@@ -31,7 +31,7 @@ const PatientChat = () => {
     const fetchChatRooms = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/chat/rooms', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/rooms`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -47,7 +47,7 @@ const PatientChat = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/chat/rooms', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/rooms`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

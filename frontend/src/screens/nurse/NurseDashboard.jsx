@@ -90,8 +90,8 @@ const NurseDashboard = () => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button size="sm" variant="outline">View Vitals</Button>
-                                        <Button size="sm">Log Visit</Button>
+                                        <Button size="sm" variant="outline" onClick={() => navigate('/nurse/assigned-patients')}>View Vitals</Button>
+                                        <Button size="sm" onClick={() => navigate('/nurse/home-care-tasks')}>Log Visit</Button>
                                     </div>
                                 </Card>
                             ))}
@@ -110,8 +110,8 @@ const NurseDashboard = () => {
                                 <Card key={idx} className="p-4 border-l-4 border-l-highlight">
                                     <div className="flex justify-between items-start mb-2">
                                         <span className={`text-xs px-2 py-1 rounded-full ${item.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                item.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-blue-100 text-blue-700'
+                                            item.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-blue-100 text-blue-700'
                                             }`}>
                                             {item.priority.toUpperCase()}
                                         </span>

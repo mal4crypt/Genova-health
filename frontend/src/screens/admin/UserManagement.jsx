@@ -25,7 +25,7 @@ const UserManagement = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/admin/users/${selectedRole}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/${selectedRole}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -40,7 +40,7 @@ const UserManagement = () => {
     const handleVerifyProvider = async (providerId, providerType, verified) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://localhost:5000/api/admin/verify/${providerType}/${providerId}`, {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/verify/${providerType}/${providerId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -159,8 +159,8 @@ const UserManagement = () => {
                                 key={role}
                                 onClick={() => setSelectedRole(role)}
                                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${selectedRole === role
-                                        ? 'bg-white dark:bg-gray-700 shadow text-primary'
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                                    ? 'bg-white dark:bg-gray-700 shadow text-primary'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
                                     }`}
                             >
                                 {role.charAt(0).toUpperCase() + role.slice(1)}s

@@ -39,7 +39,7 @@ const CreatePrescription = () => {
                 patientId: selectedPatient.user_id // Ensure we send the correct ID type
             };
 
-            const response = await fetch('http://localhost:5000/api/prescriptions', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/prescriptions`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -72,7 +72,7 @@ const CreatePrescription = () => {
     const fetchPrescriptions = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/prescriptions', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/prescriptions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

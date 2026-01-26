@@ -9,9 +9,13 @@ import Register from './screens/auth/Register';
 
 // Admin
 import EnhancedAdminDashboard from './screens/admin/EnhancedAdminDashboard';
+import UsersManagement from './screens/admin/UsersManagement';
+import ActivityFeed from './screens/admin/ActivityFeed';
 
 // Doctor
 import CreatePrescription from './screens/doctor/CreatePrescription';
+import DoctorDashboard from './screens/doctor/DoctorDashboard';
+import Appointments from './screens/doctor/Appointments';
 
 // Patient
 import PatientDashboard from './screens/patient/PatientDashboard';
@@ -22,9 +26,21 @@ import MedicationReminders from './screens/patient/MedicationReminders';
 import FamilyAccounts from './screens/patient/FamilyAccounts';
 import BookDoctor from './screens/patient/BookDoctor';
 import Emergency from './screens/patient/Emergency';
+import SymptomChecker from './screens/patient/SymptomChecker';
+import OrderDrugs from './screens/patient/OrderDrugs';
+import NutritionAI from './screens/patient/NutritionAI';
+import FitnessAI from './screens/patient/FitnessAI';
+import VirtualNurse from './screens/patient/VirtualNurse';
+
+// Nurse
+import NurseDashboard from './screens/nurse/NurseDashboard';
+import HomeCareTasks from './screens/nurse/HomeCareTasks';
+import AssignedPatients from './screens/nurse/AssignedPatients';
 
 // Driver
 import DriverDeliveries from './screens/driver/DriverDeliveries';
+import DriverDashboard from './screens/driver/DriverDashboard';
+import TransportRequests from './screens/driver/TransportRequests';
 
 // Video
 import VideoConsultation from './components/video/VideoConsultation';
@@ -58,9 +74,23 @@ const AppLayout = ({ children, role }) => {
     );
 };
 
-function App() {
+// Home Redirect Helper
+const HomeRedirect = () => {
     const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
+    const token = localStorage.getItem('token');
 
+    if (!token) return <Navigate to="/login" replace />;
+
+    switch (user.role) {
+        case 'admin': return <Navigate to="/admin/dashboard" replace />;
+        case 'doctor': return <Navigate to="/doctor/dashboard" replace />;
+        case 'patient': return <Navigate to="/patient/dashboard" replace />;
+        case 'driver': return <Navigate to="/driver/dashboard" replace />;
+        default: return <Navigate to="/login" replace />;
+    }
+};
+
+function App() {
     return (
         <HashRouter>
             <ThemeProvider>
@@ -68,7 +98,9 @@ function App() {
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
+                        <Route path="/auth/:role/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/auth/:role/signup" element={<Register />} />
 
                         {/* Admin Routes */}
                         <Route
@@ -81,6 +113,26 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AppLayout role="admin">
+                                        <UsersManagement />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/activity"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AppLayout role="admin">
+                                        <ActivityFeed />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
 
                         {/* Doctor Routes */}
                         <Route
@@ -88,7 +140,17 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['doctor']}>
                                     <AppLayout role="doctor">
-                                        <CreatePrescription />
+                                        <DoctorDashboard />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/doctor/appointments"
+                            element={
+                                <ProtectedRoute allowedRoles={['doctor']}>
+                                    <AppLayout role="doctor">
+                                        <Appointments />
                                     </AppLayout>
                                 </ProtectedRoute>
                             }
@@ -99,6 +161,16 @@ function App() {
                                 <ProtectedRoute allowedRoles={['doctor']}>
                                     <AppLayout role="doctor">
                                         <CreatePrescription />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/doctor/chat"
+                            element={
+                                <ProtectedRoute allowedRoles={['doctor']}>
+                                    <AppLayout role="doctor">
+                                        <PatientChat />
                                     </AppLayout>
                                 </ProtectedRoute>
                             }
@@ -185,14 +257,136 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/patient/virtual-nurse"
+                            element={
+                                <ProtectedRoute allowedRoles={['patient']}>
+                                    <AppLayout role="patient">
+                                        <VirtualNurse />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/patient/symptom-checker"
+                            element={
+                                <ProtectedRoute allowedRoles={['patient']}>
+                                    <AppLayout role="patient">
+                                        <SymptomChecker />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/patient/order-drugs"
+                            element={
+                                <ProtectedRoute allowedRoles={['patient']}>
+                                    <AppLayout role="patient">
+                                        <OrderDrugs />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/patient/nutrition"
+                            element={
+                                <ProtectedRoute allowedRoles={['patient']}>
+                                    <AppLayout role="patient">
+                                        <NutritionAI />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/patient/fitness"
+                            element={
+                                <ProtectedRoute allowedRoles={['patient']}>
+                                    <AppLayout role="patient">
+                                        <FitnessAI />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Nurse Routes */}
+                        <Route
+                            path="/nurse/dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['nurse']}>
+                                    <AppLayout role="nurse">
+                                        <NurseDashboard />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/nurse/home-care-tasks"
+                            element={
+                                <ProtectedRoute allowedRoles={['nurse']}>
+                                    <AppLayout role="nurse">
+                                        <HomeCareTasks />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/nurse/chat"
+                            element={
+                                <ProtectedRoute allowedRoles={['nurse']}>
+                                    <AppLayout role="nurse">
+                                        <PatientChat />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/nurse/assigned-patients"
+                            element={
+                                <ProtectedRoute allowedRoles={['nurse']}>
+                                    <AppLayout role="nurse">
+                                        <AssignedPatients />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
 
                         {/* Driver Routes */}
+                        <Route
+                            path="/driver/dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['driver']}>
+                                    <AppLayout role="driver">
+                                        <DriverDashboard />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path="/driver/deliveries"
                             element={
                                 <ProtectedRoute allowedRoles={['driver']}>
                                     <AppLayout role="driver">
                                         <DriverDeliveries />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/driver/transport-requests"
+                            element={
+                                <ProtectedRoute allowedRoles={['driver']}>
+                                    <AppLayout role="driver">
+                                        <TransportRequests />
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/driver/chat"
+                            element={
+                                <ProtectedRoute allowedRoles={['driver']}>
+                                    <AppLayout role="driver">
+                                        <PatientChat />
                                     </AppLayout>
                                 </ProtectedRoute>
                             }
@@ -209,29 +403,14 @@ function App() {
                         />
 
                         {/* Default Routes */}
-                        <Route
-                            path="/"
-                            element={
-                                user.role === 'admin' ? (
-                                    <Navigate to="/admin/dashboard" replace />
-                                ) : user.role === 'doctor' ? (
-                                    <Navigate to="/doctor/dashboard" replace />
-                                ) : user.role === 'patient' ? (
-                                    <Navigate to="/patient/dashboard" replace />
-                                ) : user.role === 'driver' ? (
-                                    <Navigate to="/driver/deliveries" replace />
-                                ) : (
-                                    <Navigate to="/login" replace />
-                                )
-                            }
-                        />
+                        <Route path="/" element={<HomeRedirect />} />
 
                         {/* 404 */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<HomeRedirect />} />
                     </Routes>
                 </ToastProvider>
             </ThemeProvider>
-        </HashRouter>
+        </HashRouter >
     );
 }
 

@@ -116,7 +116,7 @@ const DoctorDashboard = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold text-primary">10:00 AM</p>
-                                        <Button size="sm" className="mt-1">Join Call</Button>
+                                        <Button size="sm" className="mt-1" onClick={() => navigate('/doctor/chat')}>Join Call</Button>
                                     </div>
                                 </Card>
                             ))}
@@ -127,13 +127,13 @@ const DoctorDashboard = () => {
                     <div>
                         <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
                         <div className="space-y-3">
-                            <Button variant="outline" className="w-full justify-start gap-2">
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/doctor/appointments')}>
                                 <Calendar className="w-4 h-4" /> Manage Schedule
                             </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2">
-                                <FileText className="w-4 h-4" /> Patient Records
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/doctor/prescriptions')}>
+                                <FileText className="w-4 h-4" /> Create Prescription
                             </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2">
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => alert('Profile settings coming soon!')}>
                                 <Settings className="w-4 h-4" /> Profile Settings
                             </Button>
                         </div>

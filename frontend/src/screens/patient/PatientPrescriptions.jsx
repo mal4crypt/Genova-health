@@ -31,7 +31,7 @@ const PatientPrescriptions = () => {
     const fetchPrescriptions = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/prescriptions', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/prescriptions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -46,7 +46,7 @@ const PatientPrescriptions = () => {
     const fetchPharmacies = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/prescriptions/pharmacies/list', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/prescriptions/pharmacies/list`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -60,7 +60,7 @@ const PatientPrescriptions = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/deliveries', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/deliveries`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

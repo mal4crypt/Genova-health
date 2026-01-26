@@ -21,7 +21,7 @@ const EnhancedAdminDashboard = () => {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/admin/stats', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -68,8 +68,8 @@ const EnhancedAdminDashboard = () => {
                                 key={item.id}
                                 onClick={() => setActiveTab(item.id)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === item.id
-                                        ? 'bg-primary text-white shadow-md'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    ? 'bg-primary text-white shadow-md'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                     }`}
                             >
                                 <item.icon size={16} />

@@ -23,7 +23,7 @@ const DriverDashboard = () => {
     const intervalRef = React.useRef(null);
 
     useEffect(() => {
-        const newSocket = io('http://localhost:5000');
+        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
         setSocket(newSocket);
         return () => newSocket.close();
     }, []);
@@ -151,17 +151,24 @@ const DriverDashboard = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Button variant="outline" className="flex items-center justify-center gap-2">
+                                    <Button variant="outline" className="flex items-center justify-center gap-2" onClick={() => window.open('tel:911')}>
                                         <Phone className="w-4 h-4" /> Call
                                     </Button>
-                                    <Button variant="primary" className="flex items-center justify-center gap-2">
+                                    <Button variant="primary" className="flex items-center justify-center gap-2" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${activeRequest.location}`)}>
                                         <Navigation className="w-4 h-4" /> Navigate
                                     </Button>
                                 </div>
                             </div>
                         </Card>
 
-                        <Button variant="danger" className="w-full py-4 text-lg font-bold shadow-lg shadow-red-200">
+                        <Button
+                            variant="danger"
+                            className="w-full py-4 text-lg font-bold shadow-lg shadow-red-200"
+                            onClick={() => {
+                                alert('Request Accepted!');
+                                navigate('/driver/deliveries');
+                            }}
+                        >
                             ACCEPT REQUEST
                         </Button>
                     </div>

@@ -23,8 +23,8 @@ const DriverDeliveries = () => {
         try {
             const token = localStorage.getItem('token');
             const url = filter === 'all'
-                ? 'http://localhost:5000/api/deliveries/driver'
-                : `http://localhost:5000/api/deliveries/driver?status=${filter}`;
+                ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/deliveries/driver`
+                : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/deliveries/driver?status=${filter}`;
 
             const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -41,7 +41,7 @@ const DriverDeliveries = () => {
     const updateDeliveryStatus = async (deliveryId, newStatus) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/deliveries/${deliveryId}/status`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/deliveries/${deliveryId}/status`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

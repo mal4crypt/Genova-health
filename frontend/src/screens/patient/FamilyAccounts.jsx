@@ -76,11 +76,11 @@ const FamilyAccounts = () => {
         window.location.reload();
     };
 
-    const addFamilMember = async (e) => {
+    const addFamilyMember = async (e) => {
         e.preventDefault();
         try {
             // TODO: API call
-            toast?.success('Family member added successfully');
+            toast?.success?.('Family member added successfully');
             setShowAddModal(false);
             setNewMember({
                 name: '',
@@ -91,7 +91,7 @@ const FamilyAccounts = () => {
             });
             fetchFamilyMembers();
         } catch (error) {
-            toast?.error('Failed to add family member');
+            toast?.error?.('Failed to add family member');
         }
     };
 

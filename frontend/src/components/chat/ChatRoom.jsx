@@ -21,7 +21,7 @@ const ChatRoom = ({ roomId, userId, userRole, userName }) => {
 
     useEffect(() => {
         // Initialize socket connection
-        const newSocket = io('http://localhost:5000');
+        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
         setSocket(newSocket);
 
         // Join the room
@@ -54,7 +54,7 @@ const ChatRoom = ({ roomId, userId, userRole, userName }) => {
     const fetchChatHistory = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/chat/rooms/${roomId}/messages`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/rooms/${roomId}/messages`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

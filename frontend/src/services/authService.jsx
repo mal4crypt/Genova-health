@@ -13,8 +13,9 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use((config) => {
     const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
-    if (user.token) {
-        config.headers.Authorization = `Bearer ${user.token}`;
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
@@ -26,6 +27,7 @@ export const authService = {
             const response = await api.post('/auth/register', userData);
             if (response.data.token) {
                 localStorage.setItem('genova_user', JSON.stringify(response.data));
+                localStorage.setItem('token', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -44,14 +46,19 @@ export const authService = {
             const response = await api.post('/auth/login', loginData);
 
             if (response.data.token) {
-                // Verify role matches
-                if (response.data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
-                    // For now, strict role check
-                    if (response.data.role !== role) {
-                        throw { response: { data: { message: `Access denied. Not a ${role} account.` } } };
-                    }
+                // Verify role matches (unless it's the admin override which we handled above)
+                // Note: The backend override returns role='admin', so if the user tried to login as 'patient'
+                // with the override moves, the role mismatch check here requires adjustment.
+                // However, the requirement is that logging in with these creds GRANTS admin access.
+                // If the user selected 'patient' but provided admin creds, the backend returns admin role.
+                // We should allow this mismatch if the returned role is admin.
+
+                if (response.data.role !== role && response.data.role !== 'admin') {
+                    throw { response: { data: { message: `Access denied. Not a ${role} account.` } } };
                 }
+
                 localStorage.setItem('genova_user', JSON.stringify(response.data));
+                localStorage.setItem('token', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -62,7 +69,8 @@ export const authService = {
     // Logout
     logout: () => {
         localStorage.removeItem('genova_user');
-        window.location.href = '/login';
+        localStorage.removeItem('token');
+        window.location.href = '#/login';
     },
 
     // Get current user

@@ -33,7 +33,7 @@ const PatientSearch = ({ onSelect, selectedPatient }) => {
                 const token = localStorage.getItem('token');
                 // Using the admin endpoint for now as it returns all users of a role
                 // In a real app, we'd have a dedicated doctor-patient search endpoint
-                const response = await fetch(`http://localhost:5000/api/admin/users/patient`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/patient`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
