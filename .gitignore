@@ -32,6 +32,6 @@ frontend/capacitor/
 .firebase/
 
 # Package manager
-package-lock.json
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
