@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -26,6 +27,9 @@ model User {
   sent_messages ChatMessage[]
   ratings_given Rating[]
   rating_reports RatingReport[]
+  health_metrics HealthMetric[]
+  fitness_goals  FitnessGoal[]
+  achievements   Achievement[]
 
   @@map("users")
 }
@@ -241,3 +245,48 @@ model RatingReport {
 
   @@map("rating_reports")
 }
+
+model HealthMetric {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type        String   // 'steps', 'sleep_minutes', 'weight', 'heart_rate'
+  value       Decimal  @db.Decimal(10, 2)
+  unit        String
+  recorded_at DateTime @default(now())
+  source      String?  // 'manual', 'apple_health', 'google_fit', 'fitbit'
+
+  @@index([user_id, type, recorded_at])
+  @@map("health_metrics")
+}
+
+model FitnessGoal {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title         String
+  target_value  Decimal   @db.Decimal(10, 2)
+  current_value Decimal   @db.Decimal(10, 2) @default(0)
+  unit          String
+  start_date    DateTime  @default(now())
+  end_date      DateTime?
+  status        String    @default("active") // 'active', 'completed', 'failed'
+  category      String?   // 'activity', 'sleep', 'weight'
+
+  @@map("fitness_goals")
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  badge_url   String?
+  level       Int      @default(1)
+  points      Int      @default(0)
+  earned_at   DateTime @default(now())
+
+  @@map("achievements")
+}
+

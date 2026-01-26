@@ -30,6 +30,7 @@ const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const videoRoutes = require('./routes/videoRoutes');
+const fitnessRoutes = require('./routes/fitnessRoutes');
 const driverLocationRoutes = require('./api/driverLocation');
 
 app.use('/api/auth', authRoutes);
@@ -39,6 +40,7 @@ app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/video', videoRoutes);
+app.use('/api/fitness', fitnessRoutes);
 
 app.get('/', (req, res) => {
     res.send('Genova Health API is running');
