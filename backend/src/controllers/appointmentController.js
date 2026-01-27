@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { sendAppointmentConfirmation } = require('../services/notificationService');
 
 // Book appointment
 exports.bookAppointment = async (req, res) => {
@@ -30,13 +31,15 @@ exports.bookAppointment = async (req, res) => {
             }
         });
 
-        // TODO: Send confirmation email/SMS
-        // TODO: Add to Google Calendar if enabled
+        // Send confirmation email
+        if (req.user.email) {
+            await sendAppointmentConfirmation(appointment, req.user.email);
+        }
 
         res.status(201).json({
             success: true,
             appointment,
-            message: 'Appointment booked successfully'
+            message: 'Appointment booked successfully. Confirmation email sent.'
         });
     } catch (error) {
         console.error('Book appointment error:', error);
