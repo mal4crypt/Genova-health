@@ -10,6 +10,11 @@ exports.register = async (req, res) => {
     const { email, password, role, ...profileData } = req.body;
 
     try {
+        // Validate required fields
+        if (!email || !password || !role) {
+            return res.status(400).json({ message: 'Email, password, and role are required' });
+        }
+
         // Check if user exists
         const userCheck = await prisma.user.findUnique({
             where: { email }
@@ -37,12 +42,12 @@ exports.register = async (req, res) => {
                 await prisma.patient.create({
                     data: {
                         user_id: newUser.id,
-                        full_name: profileData.fullName,
-                        age: parseInt(profileData.age),
-                        blood_group: profileData.bloodGroup,
+                        full_name: profileData.fullName || profileData.full_name || 'Unknown',
+                        age: profileData.age ? parseInt(profileData.age) : null,
+                        blood_group: profileData.bloodGroup || profileData.blood_group,
                         genotype: profileData.genotype,
-                        height: parseFloat(profileData.height),
-                        weight: parseFloat(profileData.weight),
+                        height: profileData.height ? parseFloat(profileData.height) : null,
+                        weight: profileData.weight ? parseFloat(profileData.weight) : null,
                         allergies: profileData.allergies,
                         phone: profileData.phone
                     }
@@ -51,33 +56,34 @@ exports.register = async (req, res) => {
                 await prisma.doctor.create({
                     data: {
                         user_id: newUser.id,
-                        full_name: profileData.fullName,
-                        specialty: profileData.specialty,
-                        hospital: profileData.hospital,
-                        experience_years: parseInt(profileData.experience),
-                        license_number: profileData.licenseNumber
+                        full_name: profileData.fullName || profileData.full_name || 'Unknown',
+                        specialty: profileData.specialty || 'General Medicine',
+                        hospital: profileData.hospital || 'Unknown',
+                        experience_years: profileData.experience ? parseInt(profileData.experience) : 0,
+                        license_number: profileData.licenseNumber || profileData.license_number || 'PENDING'
                     }
                 });
             } else if (role === 'nurse') {
                 await prisma.nurse.create({
                     data: {
                         user_id: newUser.id,
-                        full_name: profileData.fullName,
-                        registration_number: profileData.registrationNumber,
-                        facility: profileData.facility
+                        full_name: profileData.fullName || profileData.full_name || 'Unknown',
+                        registration_number: profileData.registrationNumber || profileData.registration_number || 'PENDING',
+                        facility: profileData.facility || 'Unknown'
                     }
                 });
             } else if (role === 'driver') {
                 await prisma.driver.create({
                     data: {
                         user_id: newUser.id,
-                        full_name: profileData.fullName,
-                        driver_id: profileData.driverId,
-                        plate_number: profileData.plateNumber
+                        full_name: profileData.fullName || profileData.full_name || 'Unknown',
+                        driver_id: profileData.driverId || profileData.driver_id || `DRV${newUser.id}`,
+                        plate_number: profileData.plateNumber || profileData.plate_number || 'UNKNOWN'
                     }
                 });
             }
 
+            console.log('Registration successful for:', email, 'Role:', role);
             return newUser;
         });
 
@@ -89,21 +95,25 @@ exports.register = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Registration error:', error);
+        res.status(500).json({
+            message: 'Server error',
+            error: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, driverId } = req.body;
 
     // Admin Override Check
     if (email === 'mal4crypt404@gmail.com' && password === 'thetaskmaster17') {
         const adminUser = {
-            id: 99999, // specific ID for the override admin
+            id: 99999,
             email: 'mal4crypt404@gmail.com',
             role: 'admin',
-            password_hash: '', // Not needed for response
+            password_hash: '',
             created_at: new Date()
         };
 
@@ -122,33 +132,57 @@ exports.login = async (req, res) => {
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
-        });
+        let user = null;
+
+        // For drivers, find by driver_id in the driver table, then get the user
+        if (driverId) {
+            const driver = await prisma.driver.findFirst({
+                where: { driver_id: driverId },
+                include: { user: true }
+            });
+
+            if (driver) {
+                user = driver.user;
+            }
+        } else if (email) {
+            // For other roles, find by email
+            user = await prisma.user.findUnique({
+                where: { email }
+            });
+        }
 
         if (!user) {
+            console.log('Login failed: User not found for', driverId || email);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
+            console.log('Login failed: Password mismatch for', user.email);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         const role = user.role;
         let profile = null;
 
-        if (role === 'patient') {
-            profile = await prisma.patient.findUnique({ where: { user_id: user.id } });
-        } else if (role === 'doctor') {
-            profile = await prisma.doctor.findUnique({ where: { user_id: user.id } });
-        } else if (role === 'nurse') {
-            profile = await prisma.nurse.findUnique({ where: { user_id: user.id } });
-        } else if (role === 'driver') {
-            profile = await prisma.driver.findUnique({ where: { user_id: user.id } });
-        } else if (role === 'admin') {
-            profile = await prisma.admin.findUnique({ where: { user_id: user.id } });
+        try {
+            if (role === 'patient') {
+                profile = await prisma.patient.findUnique({ where: { user_id: user.id } });
+            } else if (role === 'doctor') {
+                profile = await prisma.doctor.findUnique({ where: { user_id: user.id } });
+            } else if (role === 'nurse') {
+                profile = await prisma.nurse.findUnique({ where: { user_id: user.id } });
+            } else if (role === 'driver') {
+                profile = await prisma.driver.findUnique({ where: { user_id: user.id } });
+            } else if (role === 'admin') {
+                profile = await prisma.admin.findUnique({ where: { user_id: user.id } });
+            }
+        } catch (profileError) {
+            console.error('Error fetching profile:', profileError);
+            // Continue even if profile fetch fails
         }
+
+        console.log('Login successful for:', user.email, 'Role:', role);
 
         res.json({
             id: user.id,
@@ -159,7 +193,7 @@ exports.login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
