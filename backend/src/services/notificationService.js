@@ -2,13 +2,28 @@ const sgMail = require('@sendgrid/mail');
 const twilio = require('twilio');
 
 // Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.')) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    console.log('✅ SendGrid initialized successfully');
+} else {
+    console.warn('⚠️ SendGrid API Key missing or invalid (must start with SG.). Email notifications will be disabled.');
+}
 
-// Initialize Twilio
-const twilioClient = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-);
+// Lazy Initialize Twilio to prevent startup crash
+let twilioClient = null;
+try {
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+        twilioClient = twilio(
+            process.env.TWILIO_ACCOUNT_SID,
+            process.env.TWILIO_AUTH_TOKEN
+        );
+        console.log('✅ Twilio initialized successfully');
+    } else {
+        console.warn('⚠️ Twilio credentials missing. SMS notifications will be disabled.');
+    }
+} catch (error) {
+    console.error('❌ Failed to initialize Twilio:', error.message);
+}
 
 // Send email
 exports.sendEmail = async (to, subject, html) => {
@@ -19,6 +34,11 @@ exports.sendEmail = async (to, subject, html) => {
             subject,
             html,
         };
+
+        if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_API_KEY.startsWith('SG.')) {
+            console.warn(`Email not sent to ${to} (SendGrid disabled)`);
+            return { success: false, error: 'SendGrid disabled' };
+        }
 
         await sgMail.send(msg);
         console.log(`Email sent to ${to}`);
@@ -53,6 +73,11 @@ exports.sendAppointmentConfirmation = async (appointment, patientEmail) => {
 // Send SMS
 exports.sendSMS = async (to, message) => {
     try {
+        if (!twilioClient) {
+            console.warn(`SMS not sent to ${to} (Twilio disabled)`);
+            return { success: false, error: 'Twilio disabled' };
+        }
+
         const result = await twilioClient.messages.create({
             body: message,
             from: process.env.TWILIO_PHONE_NUMBER,
