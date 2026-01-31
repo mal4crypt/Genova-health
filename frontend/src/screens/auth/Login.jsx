@@ -41,6 +41,12 @@ const Login = () => {
             description: 'View transport and delivery requests',
             icon: <Truck className="w-6 h-6" />,
             color: 'orange-500'
+        },
+        admin: {
+            title: 'Admin Access',
+            description: 'System management and oversight',
+            icon: <Lock className="w-6 h-6" />,
+            color: 'slate-600'
         }
     };
 
@@ -52,9 +58,10 @@ const Login = () => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await authService.login(email, password, role);
+            const userData = await authService.login(email, password, role);
             addToast('Login successful! Redirecting...', 'success');
-            navigate(`/${role}/dashboard`);
+            // Use the actual role from the response, as it might be an admin override
+            navigate(`/${userData.role}/dashboard`);
         } catch (error) {
             console.error('Login error:', error);
             const message = error.response?.data?.message || error.message || 'Login failed. Please check your credentials.';
