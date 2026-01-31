@@ -6,6 +6,8 @@ import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authService } from '../../services/authService';
+import { useToast } from '../../components/ui/Toast';
 
 const Login = () => {
     const { role: urlRole } = useParams();
@@ -18,7 +20,7 @@ const Login = () => {
     const roleConfigs = {
         patient: {
             title: 'Patient Login',
-            description: 'Acccess your personalized health dashboard',
+            description: 'Access your personalized health dashboard',
             icon: <User className="w-6 h-6" />,
             color: 'primary'
         },
@@ -44,14 +46,21 @@ const Login = () => {
 
     const currentRole = roleConfigs[role] || roleConfigs.patient;
 
+    const { addToast } = useToast();
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Mock login delay
-        setTimeout(() => {
+        try {
+            await authService.login(email, password, role);
+            addToast('Login successful! Redirecting...', 'success');
+            navigate(`/${role}/dashboard`);
+        } catch (error) {
+            console.error('Login error:', error);
+            addToast(error.message || 'Login failed. Please check your credentials.', 'error');
+        } finally {
             setIsLoading(false);
-            console.log('Login attempt:', { email, password, role });
-        }, 1500);
+        }
     };
 
     return (
