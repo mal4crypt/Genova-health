@@ -57,7 +57,8 @@ const Login = () => {
             navigate(`/${role}/dashboard`);
         } catch (error) {
             console.error('Login error:', error);
-            addToast(error.message || 'Login failed. Please check your credentials.', 'error');
+            const message = error.response?.data?.message || error.message || 'Login failed. Please check your credentials.';
+            addToast(message, 'error');
         } finally {
             setIsLoading(false);
         }

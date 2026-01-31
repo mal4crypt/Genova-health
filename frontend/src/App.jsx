@@ -115,6 +115,7 @@ const HomeRedirect = () => {
     switch (user.role) {
         case 'admin': return <Navigate to="/admin/dashboard" replace />;
         case 'doctor': return <Navigate to="/doctor/dashboard" replace />;
+        case 'nurse': return <Navigate to="/nurse/dashboard" replace />;
         case 'patient': return <Navigate to="/patient/dashboard" replace />;
         case 'driver': return <Navigate to="/driver/dashboard" replace />;
         default: return <Navigate to="/login" replace />;

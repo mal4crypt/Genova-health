@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/Label';
+import { Card, CardContent } from '../../components/ui/Card';
 import { authService } from '../../services/authService';
+import { useToast } from '../../components/ui/Toast';
+import { User, Mail, Lock, Phone, Calendar as CalendarIcon, Droplets, Activity, Weight, Height } from 'lucide-react';
 
 const SignupPatient = (props) => {
     const navigate = useNavigate();
@@ -20,6 +22,8 @@ const SignupPatient = (props) => {
         password: ''
     });
 
+    const { addToast } = useToast();
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
     };
@@ -29,59 +33,103 @@ const SignupPatient = (props) => {
         setLoading(true);
         try {
             await authService.register({ ...formData, role: 'patient' });
+            addToast('Account created successfully!', 'success');
             navigate('/patient/dashboard');
         } catch (error) {
             console.error(error);
+            addToast(error.response?.data?.message || 'Registration failed. Please try again.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-white p-6">
-            <div className="max-w-md mx-auto">
-                <h1 className="text-2xl font-bold text-primary mb-2">Patient Sign Up</h1>
-                <p className="text-gray-600 mb-8">Create your account to get started.</p>
+        <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+            <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <div className="relative group">
+                                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input id="fullName" placeholder="John Doe Bianca" className="pl-10 h-12 rounded-xl" value={formData.fullName} onChange={handleChange} required />
+                            </div>
+                        </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input id="fullName" label="Full Name" value={formData.fullName} onChange={handleChange} required />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="age">Age</Label>
+                                <div className="relative group">
+                                    <CalendarIcon className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="age" type="number" placeholder="25" className="pl-10 h-12 rounded-xl" value={formData.age} onChange={handleChange} required />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="bloodGroup">Blood Group</Label>
+                                <div className="relative group">
+                                    <Droplets className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="bloodGroup" placeholder="O+" className="pl-10 h-12 rounded-xl" value={formData.bloodGroup} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input id="age" label="Age" type="number" value={formData.age} onChange={handleChange} required />
-                        <Input id="bloodGroup" label="Blood Group" value={formData.bloodGroup} onChange={handleChange} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="genotype">Genotype</Label>
+                                <div className="relative group">
+                                    <Activity className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="genotype" placeholder="AA" className="pl-10 h-12 rounded-xl" value={formData.genotype} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <div className="relative group">
+                                    <Phone className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="phone" type="tel" placeholder="+234..." className="pl-10 h-12 rounded-xl" value={formData.phone} onChange={handleChange} required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="height">Height (cm)</Label>
+                                <div className="relative group">
+                                    <Height className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="height" type="number" placeholder="180" className="pl-10 h-12 rounded-xl" value={formData.height} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="weight">Weight (kg)</Label>
+                                <div className="relative group">
+                                    <Weight className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input id="weight" type="number" placeholder="75" className="pl-10 h-12 rounded-xl" value={formData.weight} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <div className="relative group">
+                                <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input id="email" type="email" placeholder="john@example.com" className="pl-10 h-12 rounded-xl" value={formData.email} onChange={handleChange} required />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input id="password" type="password" placeholder="••••••••" className="pl-10 h-12 rounded-xl" value={formData.password} onChange={handleChange} required />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input id="genotype" label="Genotype" value={formData.genotype} onChange={handleChange} />
-                        <Input id="phone" label="Phone Number" type="tel" value={formData.phone} onChange={handleChange} required />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input id="height" label="Height (cm)" type="number" value={formData.height} onChange={handleChange} />
-                        <Input id="weight" label="Weight (kg)" type="number" value={formData.weight} onChange={handleChange} />
-                    </div>
-
-                    <Input id="allergies" label="Allergies (Optional)" value={formData.allergies} onChange={handleChange} />
-                    <Input id="email" label="Email" type="email" value={formData.email} onChange={handleChange} required />
-                    <Input id="password" label="Password" type="password" value={formData.password} onChange={handleChange} required />
-
-                    <Button type="submit" className="w-full mt-6" disabled={loading}>
+                    <Button type="submit" className="w-full h-12 rounded-xl font-bold" disabled={loading}>
                         {loading ? 'Creating Account...' : 'Sign Up'}
                     </Button>
                 </form>
-
-                <p className="mt-4 text-center text-sm text-gray-600">
-                    Already have an account?{' '}
-                    <button
-                        type="button"
-                        onClick={props.onSwitch}
-                        className="text-primary font-medium hover:underline focus:outline-none"
-                    >
-                        Login
-                    </button>
-                </p>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 };
 
