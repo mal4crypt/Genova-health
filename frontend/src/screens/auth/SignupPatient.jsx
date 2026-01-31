@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { authService } from '../../services/authService';
 
-const SignupPatient = () => {
+const SignupPatient = (props) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -71,7 +71,14 @@ const SignupPatient = () => {
                 </form>
 
                 <p className="mt-4 text-center text-sm text-gray-600">
-                    Already have an account? <Link to="/auth/patient/login" className="text-primary font-medium">Login</Link>
+                    Already have an account?{' '}
+                    <button
+                        type="button"
+                        onClick={props.onSwitch}
+                        className="text-primary font-medium hover:underline focus:outline-none"
+                    >
+                        Login
+                    </button>
                 </p>
             </div>
         </div>

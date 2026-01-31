@@ -2,8 +2,8 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
-
-// Auth
+import { Home, MessageCircle, Calendar, User, Menu, ClipboardList, Package, LayoutDashboard, Users, Activity } from 'lucide-react';
+import { BottomNavigation } from './components/navigation/BottomNavigation';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 
@@ -45,9 +45,6 @@ import TransportRequests from './screens/driver/TransportRequests';
 // Video
 import VideoConsultation from './components/video/VideoConsultation';
 
-// Mobile Navigation
-import MobileNav from './components/navigation/MobileNav';
-
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
     const user = JSON.parse(localStorage.getItem('genova_user') || '{}');
@@ -64,12 +61,46 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return children;
 };
 
-// Layout with Mobile Nav
+// Layout with Unified Navigation
 const AppLayout = ({ children, role }) => {
+    const navItems = {
+        patient: [
+            { icon: Home, label: 'Home', path: '/patient/dashboard' },
+            { icon: Calendar, label: 'Appointments', path: '/patient/book-doctor' },
+            { icon: MessageCircle, label: 'Chat', path: '/patient/chat' },
+            { icon: User, label: 'Profile', path: '/patient/records' },
+        ],
+        doctor: [
+            { icon: Home, label: 'Home', path: '/doctor/dashboard' },
+            { icon: Calendar, label: 'Appointments', path: '/doctor/appointments' },
+            { icon: MessageCircle, label: 'Chat', path: '/doctor/chat' },
+            { icon: Menu, label: 'More', path: '/doctor/prescriptions' },
+        ],
+        nurse: [
+            { icon: Home, label: 'Home', path: '/nurse/dashboard' },
+            { icon: Calendar, label: 'Tasks', path: '/nurse/home-care-tasks' },
+            { icon: MessageCircle, label: 'Chat', path: '/nurse/chat' },
+            { icon: User, label: 'Patients', path: '/nurse/assigned-patients' },
+        ],
+        driver: [
+            { icon: Home, label: 'Home', path: '/driver/dashboard' },
+            { icon: Calendar, label: 'Deliveries', path: '/driver/deliveries' },
+            { icon: Menu, label: 'Requests', path: '/driver/transport-requests' },
+            { icon: User, label: 'Profile', path: '/driver/chat' },
+        ],
+        admin: [
+            { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
+            { icon: Users, label: 'Users', path: '/admin/users' },
+            { icon: Activity, label: 'Activity', path: '/admin/activity' },
+        ],
+    };
+
+    const items = navItems[role] || navItems.patient;
+
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-background dark:bg-gray-900 pb-28">
             {children}
-            <MobileNav role={role} />
+            <BottomNavigation items={items} />
         </div>
     );
 };

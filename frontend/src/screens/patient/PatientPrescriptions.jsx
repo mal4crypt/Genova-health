@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Truck, FileText, Download, MapPin } from 'lucide-react';
-import Card from '../../components/ui/Card';
+import { Package, Truck, FileText, Download, MapPin, ChevronRight, Search, Filter } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
 import { EmptyPrescriptions } from '../../components/ui/EmptyState';
 import { SkeletonList } from '../../components/ui/Loading';
+import { Input } from '../../components/ui/Input';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PatientPrescriptions = () => {
     const [prescriptions, setPrescriptions] = useState([]);
@@ -97,13 +99,14 @@ const PatientPrescriptions = () => {
             dispensed: 'success',
             delivered: 'success'
         };
-        return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
+        return <Badge variant={variants[status] || 'default'} className="rounded-full uppercase text-[10px] px-3 font-bold tracking-wider">{status}</Badge>;
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 pb-20 md:pb-6">
-                <div className="max-w-5xl mx-auto">
+            <div className="min-h-screen bg-transparent p-6">
+                <div className="max-w-5xl mx-auto space-y-4">
+                    <div className="h-10 w-48 bg-muted/50 rounded-xl animate-pulse" />
                     <SkeletonList count={3} />
                 </div>
             </div>
@@ -111,191 +114,237 @@ const PatientPrescriptions = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 pb-20 md:pb-6">
+        <div className="min-h-screen bg-transparent p-6">
             <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                        My Prescriptions
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        View your prescriptions and request home delivery
-                    </p>
+                {/* Modern Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                    <div>
+                        <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">
+                            Digital Records
+                        </h1>
+                        <p className="text-muted-foreground font-medium">
+                            Manage your prescriptions and order smart deliveries
+                        </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <div className="relative flex-1 md:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search medication..."
+                                className="pl-10 h-12 bg-card/50 border-border/50 rounded-2xl"
+                            />
+                        </div>
+                        <Button variant="outline" className="h-12 w-12 rounded-2xl p-0 border-border/50 bg-card/50">
+                            <Filter className="w-5 h-5 text-muted-foreground" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Prescriptions List */}
-                {prescriptions.length === 0 ? (
-                    <EmptyPrescriptions />
-                ) : (
-                    <div className="grid gap-4">
-                        {prescriptions.map((prescription) => (
-                            <Card key={prescription.id} className="p-6 hover:shadow-md transition-shadow">
-                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                    <div className="flex items-start gap-4 flex-1">
-                                        <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg">
-                                            <FileText className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                                                    {prescription.medication}
-                                                </h3>
-                                                {getStatusBadge(prescription.status)}
-                                            </div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                                Prescribed by Dr. {prescription.doctor_name}
-                                            </p>
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                                                <div>
-                                                    <span className="text-gray-500 dark:text-gray-400">Dosage:</span>
-                                                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                        {prescription.dosage}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500 dark:text-gray-400">Frequency:</span>
-                                                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                        {prescription.frequency}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500 dark:text-gray-400">Duration:</span>
-                                                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                        {prescription.duration}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {prescription.instructions && (
-                                                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                                    <p className="text-sm text-blue-900 dark:text-blue-200">
-                                                        <strong>Instructions:</strong> {prescription.instructions}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                <AnimatePresence mode="wait">
+                    {prescriptions.length === 0 ? (
+                        <EmptyPrescriptions key="empty" />
+                    ) : (
+                        <motion.div
+                            key="list"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="grid gap-6"
+                        >
+                            {prescriptions.map((prescription, idx) => (
+                                <motion.div
+                                    key={prescription.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                >
+                                    <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-xl hover:shadow-2xl hover:shadow-primary/5 transition-all group rounded-[2.5rem]">
+                                        <CardContent className="p-0">
+                                            <div className="flex flex-col lg:flex-row">
+                                                <div className="p-8 flex-1">
+                                                    <div className="flex items-start justify-between mb-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="bg-primary/10 p-4 rounded-[1.5rem] group-hover:scale-110 transition-transform">
+                                                                <FileText className="w-8 h-8 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center gap-3 mb-1">
+                                                                    <h3 className="text-xl font-black text-foreground tracking-tight">
+                                                                        {prescription.medication}
+                                                                    </h3>
+                                                                    {getStatusBadge(prescription.status)}
+                                                                </div>
+                                                                <p className="text-sm font-bold text-muted-foreground">
+                                                                    Prescribed by <span className="text-foreground">Dr. {prescription.doctor_name}</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                    {/* Actions */}
-                                    <div className="flex md:flex-col gap-2">
-                                        <Button
-                                            onClick={() => {
-                                                setSelectedPrescription(prescription);
-                                                setShowDeliveryModal(true);
-                                            }}
-                                            className="flex-1 md:flex-initial"
-                                            disabled={prescription.status === 'delivered'}
-                                        >
-                                            <Truck className="w-4 h-4 mr-2" />
-                                            Request Delivery
-                                        </Button>
-                                        <Button
-                                            className="flex-1 md:flex-initial bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                        >
-                                            <Download className="w-4 h-4 mr-2" />
-                                            Download
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                )}
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                                                        <div className="bg-muted/40 p-4 rounded-3xl border border-border/20">
+                                                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground mb-1">Dosage</p>
+                                                            <p className="font-bold text-foreground">{prescription.dosage}</p>
+                                                        </div>
+                                                        <div className="bg-muted/40 p-4 rounded-3xl border border-border/20">
+                                                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground mb-1">Frequency</p>
+                                                            <p className="font-bold text-foreground">{prescription.frequency}</p>
+                                                        </div>
+                                                        <div className="bg-muted/40 p-4 rounded-3xl border border-border/20">
+                                                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground mb-1">Duration</p>
+                                                            <p className="font-bold text-foreground">{prescription.duration}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {prescription.instructions && (
+                                                        <div className="flex items-start gap-3 p-5 bg-primary/5 border border-primary/10 rounded-3xl">
+                                                            <div className="bg-primary/10 p-2 rounded-xl">
+                                                                <Bot className="w-4 h-4 text-primary" />
+                                                            </div>
+                                                            <p className="text-sm text-foreground font-medium leading-relaxed">
+                                                                <strong className="block text-primary text-[10px] uppercase tracking-widest mb-1">Doctor's Note</strong>
+                                                                {prescription.instructions}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="bg-muted/20 lg:w-72 p-8 border-t lg:border-t-0 lg:border-l border-border/50 flex flex-col justify-center gap-3">
+                                                    <Button
+                                                        onClick={() => {
+                                                            setSelectedPrescription(prescription);
+                                                            setShowDeliveryModal(true);
+                                                        }}
+                                                        className="w-full rounded-2xl h-14 shadow-lg shadow-primary/10 transition-all active:scale-95"
+                                                        disabled={prescription.status === 'delivered'}
+                                                    >
+                                                        <Truck className="w-5 h-5 mr-3" />
+                                                        Smart Delivery
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full rounded-2xl h-14 border-border/50 bg-card hover:bg-muted transition-all"
+                                                    >
+                                                        <Download className="w-5 h-5 mr-3" />
+                                                        Save PDF
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Delivery Request Modal */}
                 <Modal
                     isOpen={showDeliveryModal}
                     onClose={() => setShowDeliveryModal(false)}
-                    title="Request Home Delivery"
-                    size="md"
+                    title="Smart Home Delivery"
+                    size="lg"
                 >
                     {selectedPrescription && (
-                        <form onSubmit={handleRequestDelivery} className="space-y-4">
-                            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
-                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <form onSubmit={handleRequestDelivery} className="space-y-6 pt-4">
+                            <div className="bg-primary/5 border border-primary/10 p-6 rounded-[2rem]">
+                                <h4 className="font-black text-xl text-foreground mb-1 tracking-tight">
                                     {selectedPrescription.medication}
                                 </h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {selectedPrescription.dosage} - {selectedPrescription.frequency}
+                                <p className="text-sm font-bold text-muted-foreground">
+                                    {selectedPrescription.dosage} • {selectedPrescription.frequency}
                                 </p>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Select Pharmacy
-                                </label>
-                                <select
-                                    value={deliveryForm.pharmacyId}
-                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, pharmacyId: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    required
-                                >
-                                    <option value="">Choose a pharmacy</option>
-                                    {pharmacies.map((pharmacy) => (
-                                        <option key={pharmacy.id} value={pharmacy.id}>
-                                            {pharmacy.name} - {pharmacy.address}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground ml-2">
+                                            Select Pharmacy
+                                        </label>
+                                        <select
+                                            value={deliveryForm.pharmacyId}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, pharmacyId: e.target.value })}
+                                            className="w-full h-14 px-4 rounded-2xl border border-border/50 bg-muted/30 text-foreground font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                            required
+                                        >
+                                            <option value="">Choose a location...</option>
+                                            {pharmacies.map((pharmacy) => (
+                                                <option key={pharmacy.id} value={pharmacy.id}>
+                                                    {pharmacy.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground ml-2">
+                                            Contact Phone
+                                        </label>
+                                        <Input
+                                            type="tel"
+                                            value={deliveryForm.deliveryPhone}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryPhone: e.target.value })}
+                                            placeholder="+234..."
+                                            className="h-14 rounded-2xl border-border/50 bg-muted/30 font-bold"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground ml-2">
+                                        Delivery Address
+                                    </label>
+                                    <textarea
+                                        value={deliveryForm.deliveryAddress}
+                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryAddress: e.target.value })}
+                                        placeholder="Enter full street address..."
+                                        rows={3}
+                                        className="w-full p-4 rounded-2xl border border-border/50 bg-muted/30 text-foreground font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground ml-2">
+                                        Special Instructions
+                                    </label>
+                                    <textarea
+                                        value={deliveryForm.notes}
+                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                                        placeholder="Any notes for the driver? (Optional)"
+                                        rows={2}
+                                        className="w-full p-4 rounded-2xl border border-border/50 bg-muted/30 text-foreground font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Delivery Address
-                                </label>
-                                <textarea
-                                    value={deliveryForm.deliveryAddress}
-                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryAddress: e.target.value })}
-                                    placeholder="Enter your delivery address"
-                                    rows={3}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                                    required
-                                />
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-emerald-500/5 border border-emerald-500/10 p-5 rounded-3xl flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-3 font-bold text-emerald-600">
+                                    <MapPin className="w-5 h-5" />
+                                    <span>Estimated Delivery</span>
+                                </div>
+                                <span className="font-black text-emerald-600">₦1,500.00</span>
+                            </motion.div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Phone Number
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={deliveryForm.deliveryPhone}
-                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryPhone: e.target.value })}
-                                    placeholder="+234 xxx xxx xxxx"
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Additional Notes (Optional)
-                                </label>
-                                <textarea
-                                    value={deliveryForm.notes}
-                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
-                                    placeholder="Any special instructions for delivery..."
-                                    rows={2}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                                />
-                            </div>
-
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <strong>Delivery Fee:</strong> ₦1,500.00 (Standard)
-                                </p>
-                            </div>
-
-                            <div className="flex gap-3 justify-end pt-4">
+                            <div className="flex gap-4 pt-4">
                                 <Button
                                     type="button"
+                                    variant="ghost"
                                     onClick={() => setShowDeliveryModal(false)}
-                                    className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    className="flex-1 h-14 rounded-2xl font-bold"
                                 >
                                     Cancel
                                 </Button>
-                                <Button type="submit">
-                                    <Package className="w-4 h-4 mr-2" />
-                                    Request Delivery
+                                <Button type="submit" className="flex-[2] h-14 rounded-2xl font-bold shadow-xl shadow-primary/20">
+                                    <Package className="w-5 h-5 mr-3" />
+                                    Confirm Order
                                 </Button>
                             </div>
                         </form>

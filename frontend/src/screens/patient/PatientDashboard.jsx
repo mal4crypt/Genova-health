@@ -1,162 +1,188 @@
-import React from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import {
-    MessageSquare,
-    Stethoscope,
-    AlertCircle,
-    Activity,
-    Pill,
-    Apple,
-    Dumbbell,
-    FileText,
-    Menu,
-    Bell
-} from 'lucide-react';
-import Card from '../../components/ui/Card';
-import VirtualNurse from './VirtualNurse';
-import SymptomChecker from './SymptomChecker';
-import BookDoctor from './BookDoctor';
-import Emergency from './Emergency';
-import OrderDrugs from './OrderDrugs';
-import NutritionAI from './NutritionAI';
-import FitnessAI from './FitnessAI';
-import HealthRecords from './HealthRecords';
-
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Home, Calendar, MessageCircle, User, Activity, Bell, Bot, FileText, ChevronRight, TrendingUp } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/Avatar';
+import { Badge } from '../../components/ui/Badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { authService } from '../../services/authService';
+import { motion } from 'framer-motion';
 
 const PatientDashboard = () => {
     const navigate = useNavigate();
-    const user = authService.getCurrentUser();
-    const userName = user?.profile?.full_name || user?.email?.split('@')[0] || 'Patient';
+    const [user] = useState(authService.getCurrentUser());
 
-    const features = [
-        {
-            id: 'virtual-nurse',
-            title: 'Virtual Nurse',
-            icon: <MessageSquare className="w-6 h-6 text-white" />,
-            color: 'bg-secondary',
-            path: '/patient/virtual-nurse'
-        },
-        {
-            id: 'symptom-checker',
-            title: 'Symptom Checker',
-            icon: <Activity className="w-6 h-6 text-white" />,
-            color: 'bg-blue-500',
-            path: '/patient/symptom-checker'
-        },
-        {
-            id: 'book-doctor',
-            title: 'Book Doctor',
-            icon: <Stethoscope className="w-6 h-6 text-white" />,
-            color: 'bg-primary',
-            path: '/patient/book-doctor'
-        },
-        {
-            id: 'order-drugs',
-            title: 'Order Drugs',
-            icon: <Pill className="w-6 h-6 text-white" />,
-            color: 'bg-purple-500',
-            path: '/patient/order-drugs'
-        },
-        {
-            id: 'nutrition',
-            title: 'Nutrition AI',
-            icon: <Apple className="w-6 h-6 text-white" />,
-            color: 'bg-green-600',
-            path: '/patient/nutrition'
-        },
-        {
-            id: 'fitness',
-            title: 'Fitness AI',
-            icon: <Dumbbell className="w-6 h-6 text-white" />,
-            color: 'bg-orange-500',
-            path: '/patient/fitness'
-        },
-        {
-            id: 'records',
-            title: 'Health Records',
-            icon: <FileText className="w-6 h-6 text-white" />,
-            color: 'bg-teal-600',
-            path: '/patient/records'
-        },
-        {
-            id: 'emergency',
-            title: 'Emergency',
-            icon: <AlertCircle className="w-6 h-6 text-white" />,
-            color: 'bg-error',
-            path: '/patient/emergency'
-        }
+    const quickActions = [
+        { icon: Bot, label: 'AI Symptom Checker', desc: '✨ Gemini powered', path: '/patient/symptom-checker', color: 'primary' },
+        { icon: Calendar, label: 'Book Appointment', desc: 'Find doctors', path: '/patient/book-doctor', color: 'secondary' },
+        { icon: FileText, label: 'Prescriptions', desc: 'View & order', path: '/patient/prescriptions', color: 'rose-500' },
+        { icon: Activity, label: 'Fitness Tracker', desc: 'Track progress', path: '/patient/fitness', color: 'orange-500' },
     ];
 
     return (
-        <div className="min-h-screen bg-background pb-20">
-            {/* Header */}
-            <header className="bg-white shadow-sm p-4 sticky top-0 z-10">
-                <div className="flex justify-between items-center max-w-4xl mx-auto">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                            JD
-                        </div>
+        <div className="min-h-screen bg-transparent">
+            {/* Premium Header */}
+            <div className="relative overflow-hidden bg-primary px-6 pt-12 pb-24 rounded-b-[3rem] shadow-2xl shadow-primary/20">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/20 rounded-full -ml-24 -mb-24 blur-3xl" />
+
+                <div className="relative z-10 flex items-center justify-between mb-8">
+                    <div className="flex items-center space-x-4">
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Avatar className="h-14 w-14 border-2 border-white/20 shadow-xl">
+                                <AvatarImage src={user?.profile?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.profile?.full_name || 'User'}`} />
+                                <AvatarFallback className="bg-white/10 text-white font-bold">
+                                    {user?.profile?.full_name?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                        </motion.div>
                         <div>
-                            <h1 className="font-bold text-gray-900">Hello, {userName}</h1>
-                            <p className="text-xs text-gray-500">How are you feeling today?</p>
+                            <p className="text-white/70 text-sm font-medium">Welcome back,</p>
+                            <h2 className="text-2xl font-extrabold text-white tracking-tight">{user?.profile?.full_name || 'Patient'}</h2>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
-                            <Bell className="w-6 h-6" />
-                        </button>
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
-                            <Menu className="w-6 h-6" />
-                        </button>
-                    </div>
+                    <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        className="relative p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 cursor-pointer"
+                    >
+                        <Bell className="w-6 h-6 text-white" />
+                        <span className="absolute top-2 right-2 w-3 h-3 bg-rose-500 border-2 border-primary rounded-full" />
+                    </motion.div>
                 </div>
-            </header>
+
+                {/* Quick Actions Grid */}
+                <div className="relative z-10 grid grid-cols-2 gap-4">
+                    {quickActions.map((action, idx) => (
+                        <motion.button
+                            key={idx}
+                            whileHover={{ y: -5, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => navigate(action.path)}
+                            className="bg-white/10 backdrop-blur-xl p-4 rounded-3xl text-left border border-white/10 hover:bg-white/20 transition-all shadow-lg"
+                        >
+                            <div className={`bg-${action.color === 'primary' ? 'primary' : action.color}/20 w-12 h-12 rounded-2xl flex items-center justify-center mb-3 shadow-inner`}>
+                                <action.icon className="w-6 h-6 text-white" />
+                            </div>
+                            <p className="font-bold text-white text-sm">{action.label}</p>
+                            <p className="text-xs text-white/60 mt-0.5">{action.desc}</p>
+                        </motion.button>
+                    ))}
+                </div>
+            </div>
 
             {/* Main Content */}
-            <main className="p-4 max-w-4xl mx-auto">
-                <Routes>
-                    <Route index element={
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {features.map((feature) => (
-                                <Card
-                                    key={feature.id}
-                                    onClick={() => navigate(feature.path)}
-                                    className="cursor-pointer hover:shadow-md transition-all active:scale-95 p-4 flex flex-col items-center justify-center gap-3 text-center border-none shadow-sm"
-                                >
-                                    <div className={`p-3 rounded-full ${feature.color} shadow-lg shadow-${feature.color}/20`}>
-                                        {feature.icon}
-                                    </div>
-                                    <span className="font-medium text-sm text-gray-700">{feature.title}</span>
-                                </Card>
-                            ))}
+            <div className="p-6 -mt-12 space-y-6 relative z-20">
+                {/* Upcoming Appointments */}
+                <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-xl rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <div>
+                            <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
+                            <CardDescription>Don't miss your next visit</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/patient/book-doctor')} className="text-primary font-bold">
+                            View All <ChevronRight className="ml-1 w-4 h-4" />
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-muted/50 p-6 rounded-3xl border border-border/50 text-center"
+                        >
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Calendar className="w-8 h-8 text-primary" />
+                            </div>
+                            <h4 className="font-bold text-foreground">No appointments yet</h4>
+                            <p className="text-sm text-muted-foreground mt-2 mb-4">Start your journey to better health by booking a consultation with our top specialists.</p>
+                            <Button onClick={() => navigate('/patient/book-doctor')} className="rounded-2xl px-8 shadow-lg shadow-primary/20">
+                                Book Now
+                            </Button>
+                        </motion.div>
+                    </CardContent>
+                </Card>
 
-                            {/* Daily Tip Card */}
-                            <div className="col-span-2 md:col-span-4 mt-4">
-                                <Card className="bg-gradient-to-r from-primary to-secondary text-white border-none">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2 bg-white/20 rounded-lg">
-                                            <Apple className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold mb-1">Daily Health Tip</h3>
-                                            <p className="text-sm opacity-90">Drink at least 8 glasses of water today to stay hydrated and keep your energy levels up!</p>
-                                        </div>
-                                    </div>
-                                </Card>
+                {/* Health Overview */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Card className="p-5 border-border/50 bg-card/80 backdrop-blur-xl rounded-[2.5rem]">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-emerald-500/10 rounded-xl">
+                                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <span className="text-sm font-bold opacity-70">Daily Activity</span>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <h3 className="text-3xl font-black">2.4k</h3>
+                            <span className="text-xs text-muted-foreground mb-1">steps/10k</span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '24%' }}
+                                className="h-full bg-emerald-500"
+                            />
+                        </div>
+                    </Card>
+
+                    <Card className="p-5 border-border/50 bg-card/80 backdrop-blur-xl rounded-[2.5rem]">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-primary/10 rounded-xl">
+                                <Activity className="w-5 h-5 text-primary" />
+                            </div>
+                            <span className="text-sm font-bold opacity-70">Health Score</span>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <h3 className="text-3xl font-black">82</h3>
+                            <span className="text-xs text-muted-foreground mb-1">/100</span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '82%' }}
+                                className="h-full bg-primary"
+                            />
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Recent Experience */}
+                <Card className="p-6 border-border/50 bg-card/80 backdrop-blur-xl rounded-[2.5rem]">
+                    <h3 className="text-lg font-bold mb-4">Security & Settings</h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between group cursor-pointer" onClick={() => navigate('/patient/records')}>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-muted rounded-2xl group-hover:bg-primary/10 transition-colors">
+                                    <FileText className="w-5 h-5 group-hover:text-primary transition-colors" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm">Medical History</p>
+                                    <p className="text-xs text-muted-foreground">Updated 2 days ago</p>
+                                </div>
+                            </div>
+                            <div className="p-2 rounded-xl bg-muted group-hover:bg-primary/20 transition-colors">
+                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
                             </div>
                         </div>
-                    } />
-                    <Route path="virtual-nurse" element={<VirtualNurse />} />
-                    <Route path="symptom-checker" element={<SymptomChecker />} />
-                    <Route path="book-doctor" element={<BookDoctor />} />
-                    <Route path="emergency" element={<Emergency />} />
-                    <Route path="order-drugs" element={<OrderDrugs />} />
-                    <Route path="nutrition" element={<NutritionAI />} />
-                    <Route path="fitness" element={<FitnessAI />} />
-                    <Route path="records" element={<HealthRecords />} />
-                </Routes>
-            </main>
+
+                        <div className="flex items-center justify-between group cursor-pointer" onClick={() => navigate('/patient/medications')}>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-muted rounded-2xl group-hover:bg-secondary/10 transition-colors">
+                                    <Activity className="w-5 h-5 group-hover:text-secondary transition-colors" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm">Smart Reminders</p>
+                                    <p className="text-xs text-muted-foreground">3 active reminders</p>
+                                </div>
+                            </div>
+                            <div className="p-2 rounded-xl bg-muted group-hover:bg-secondary/20 transition-colors">
+                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-secondary" />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 };

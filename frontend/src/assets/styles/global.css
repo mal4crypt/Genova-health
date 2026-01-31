@@ -1,55 +1,66 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Primary Colors - Medical Trust */
-  --color-primary-50: #E8F5E9;
-  --color-primary-100: #C8E6C9;
-  --color-primary-200: #A5D6A7;
-  --color-primary-300: #81C784;
-  --color-primary-400: #66BB6A;
-  --color-primary-500: #4CAF50;
-  --color-primary-600: #43A047;
-  --color-primary-700: #388E3C;
-  --color-primary-800: #2E7D32;
-  --color-primary-900: #1B5E20;
+  /* Primary Colors - Medical Trust (Green) */
+  --primary: 122 39% 49%;
+  /* #4CAF50 */
+  --primary-foreground: 0 0% 100%;
 
-  /* Secondary Colors */
-  --color-secondary-500: #2196F3;
-  --color-secondary-700: #1976D2;
-
-  /* Semantic Colors */
-  --color-success: #4CAF50;
-  --color-warning: #FF9800;
-  --color-error: #F44336;
-  --color-info: #2196F3;
+  /* Secondary Colors (Blue) */
+  --secondary: 207 90% 54%;
+  /* #2196F3 */
+  --secondary-foreground: 0 0% 100%;
 
   /* Neutral Colors */
-  --color-gray-50: #FAFAFA;
-  --color-gray-100: #F5F5F5;
-  --color-gray-200: #EEEEEE;
-  --color-gray-300: #E0E0E0;
-  --color-gray-400: #BDBDBD;
-  --color-gray-500: #9E9E9E;
-  --color-gray-600: #757575;
-  --color-gray-700: #616161;
-  --color-gray-800: #424242;
-  --color-gray-900: #212121;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 13%;
 
-  /* Legacy Support */
-  --color-primary: var(--color-primary-700);
-  --color-secondary: var(--color-secondary-500);
-  --color-highlight: var(--color-warning);
-  --color-background: var(--color-gray-50);
-  --color-text-primary: var(--color-gray-900);
-  --color-text-secondary: var(--color-gray-600);
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 46%;
 
-  /* Component Variables */
-  --card-bg: #FFFFFF;
-  --border-color: var(--color-gray-300);
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 13%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 122 39% 49%;
+
+  --radius: 0.75rem;
+
+  /* Legacy & Semantic Support */
+  --color-primary: hsl(var(--primary));
+  --color-secondary: hsl(var(--secondary));
+  --color-success: 122 39% 49%;
+  --color-warning: 36 100% 50%;
+  --color-error: 4 90% 58%;
+  --color-info: 207 90% 54%;
+
+  --card-bg: 0 0% 100%;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 88%;
+
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 64%;
+
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 88%;
+
+  --border: 0 0% 17%;
+  --input: 0 0% 17%;
+
+  --card-bg: 0 0% 12%;
+  --primary: 122 39% 54%;
+  /* Slightly lighter for dark mode */
 }
 
 /* Dark Mode */

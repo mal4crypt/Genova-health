@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/Label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import { authService } from '../../services/authService';
+import { ArrowLeft } from 'lucide-react';
 
-const LoginDriver = () => {
+const LoginDriver = (props) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -20,8 +23,6 @@ const LoginDriver = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            // Using driverId as "email" for login consistency in mock service, or we'd adjust service
-            // For simplicity, let's assume the mock service can handle this or we pass it as email
             await authService.login(formData.driverId, formData.password, 'driver');
             navigate('/driver/dashboard');
         } catch (error) {
@@ -32,24 +33,66 @@ const LoginDriver = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white p-6 flex flex-col justify-center">
-            <div className="max-w-md mx-auto w-full">
-                <h1 className="text-2xl font-bold text-error mb-2">Driver Login</h1>
-                <p className="text-gray-600 mb-8">Start your shift.</p>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input id="driverId" label="Driver ID" value={formData.driverId} onChange={handleChange} required />
-                    <Input id="password" label="Password" type="password" value={formData.password} onChange={handleChange} required />
-
-                    <Button type="submit" variant="danger" className="w-full mt-6" disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
-                    </Button>
-                </form>
-
-                <p className="mt-4 text-center text-sm text-gray-600">
-                    Don't have an account? <Link to="/auth/driver/signup" className="text-error font-medium">Sign Up</Link>
-                </p>
-            </div>
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md shadow-xl border-none">
+                <CardHeader className="space-y-1">
+                    <div className="flex items-center mb-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 h-auto hover:bg-transparent -ml-2 text-gray-500 hover:text-gray-900"
+                            onClick={() => navigate('/')}
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                        </Button>
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-center text-orange-700">Driver Login</CardTitle>
+                    <CardDescription className="text-center">
+                        Start your delivery shift
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="driverId">Driver ID</Label>
+                            <Input
+                                id="driverId"
+                                placeholder="DRV12345"
+                                value={formData.driverId}
+                                onChange={handleChange}
+                                required
+                                className="focus-visible:ring-orange-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                                className="focus-visible:ring-orange-500"
+                            />
+                        </div>
+                        <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
+                            {loading ? 'Logging in...' : 'Sign In'}
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <p className="text-sm text-gray-600">
+                        Don't have an account?{' '}
+                        <button
+                            type="button"
+                            onClick={props.onSwitch}
+                            className="text-orange-600 font-medium hover:underline focus:outline-none"
+                        >
+                            Sign Up
+                        </button>
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
     );
 };

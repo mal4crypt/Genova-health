@@ -1,34 +1,22 @@
-import React from 'react';
+import * as React from "react"
 
-const Input = ({
-    label,
-    error,
-    className = '',
-    id,
-    ...props
-}) => {
+import { cn } from "../../lib/utils"
+
+const Input = React.forwardRef(({ className, type, ...props }, ref) => {
     return (
-        <div className={`flex flex-col gap-1.5 ${className}`}>
-            {label && (
-                <label htmlFor={id} className="text-sm font-medium text-gray-700">
-                    {label}
-                </label>
+        <input
+            type={type}
+            className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                className
             )}
-            <input
-                id={id}
-                className={`
-          flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 
-          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-          disabled:cursor-not-allowed disabled:opacity-50
-          ${error ? 'border-error focus:ring-error' : ''}
-        `}
-                {...props}
-            />
-            {error && (
-                <span className="text-xs text-error">{error}</span>
-            )}
-        </div>
-    );
-};
+            ref={ref}
+            {...props}
+        />
+    )
+})
+Input.displayName = "Input"
+
+export { Input }
 
 export default Input;
