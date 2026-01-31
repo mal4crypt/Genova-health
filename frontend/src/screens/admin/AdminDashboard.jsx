@@ -3,6 +3,8 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { io } from 'socket.io-client';
 import Card from '../../components/ui/Card';
 
+import { BASE_URL } from '../../config';
+
 const containerStyle = {
     width: '100%',
     height: '500px'
@@ -23,7 +25,7 @@ const AdminDashboard = () => {
     });
 
     useEffect(() => {
-        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+        const newSocket = io(BASE_URL);
         setSocket(newSocket);
 
         newSocket.on('admin_driver_update', (data) => {

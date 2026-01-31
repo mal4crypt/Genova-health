@@ -3,6 +3,7 @@ import { Users, UserCheck, Activity, Package, LayoutDashboard, ClipboardList } f
 import Card from '../../components/ui/Card';
 import { SkeletonCard } from '../../components/ui/Loading';
 import { useToast } from '../../components/ui/Toast';
+import { API_URL } from '../../config';
 
 // Sub-components
 import UserManagement from './UserManagement';
@@ -21,7 +22,7 @@ const EnhancedAdminDashboard = () => {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, {
+            const response = await fetch(`${API_URL}/admin/stats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

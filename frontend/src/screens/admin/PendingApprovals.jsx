@@ -6,6 +6,7 @@ import { SkeletonCard } from '../../components/ui/Loading';
 import EmptyState from '../../components/ui/EmptyState';
 import Badge from '../../components/ui/Badge';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { API_URL } from '../../config';
 
 const PendingApprovals = () => {
     const [doctors, setDoctors] = useState([]);
@@ -23,8 +24,8 @@ const PendingApprovals = () => {
         try {
             const token = localStorage.getItem('token');
             const [docRes, nurseRes] = await Promise.all([
-                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/doctor`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/nurse`, { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_URL}/admin/users/doctor`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_URL}/admin/users/nurse`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             const docData = await docRes.json();
@@ -43,7 +44,7 @@ const PendingApprovals = () => {
     const handleVerify = async (id, type) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/verify/${type}/${id}`, {
+            await fetch(`${API_URL}/admin/verify/${type}/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

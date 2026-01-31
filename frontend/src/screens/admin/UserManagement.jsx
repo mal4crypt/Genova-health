@@ -8,6 +8,7 @@ import { useToast } from '../../components/ui/Toast';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Card from '../../components/ui/Card';
 import Tabs from '../../components/ui/Tabs';
+import { API_URL } from '../../config';
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -25,7 +26,7 @@ const UserManagement = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/${selectedRole}`, {
+            const response = await fetch(`${API_URL}/admin/users/${selectedRole}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -40,7 +41,7 @@ const UserManagement = () => {
     const handleVerifyProvider = async (providerId, providerType, verified) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/verify/${providerType}/${providerId}`, {
+            await fetch(`${API_URL}/admin/verify/${providerType}/${providerId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

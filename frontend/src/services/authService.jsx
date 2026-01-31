@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+console.log('[AUTH] Using API_URL:', API_URL);
 
 // Create axios instance with default config
 const api = axios.create({
@@ -31,37 +32,39 @@ export const authService = {
             }
             return response.data;
         } catch (error) {
+            console.error('[AUTH] Registration failure:', error.response?.data || error.message);
             throw error;
         }
     },
 
     // Login
     login: async (email, password, role) => {
+        console.log(`[AUTH] Attempting login for ${email} with role ${role} at ${API_URL}`);
         try {
             // Special handling for driver login which uses driverId instead of email
             const loginData = role === 'driver'
-                ? { driverId: email, password } // LoginDriver passes ID as first arg
+                ? { driverId: email, password }
                 : { email, password };
 
             const response = await api.post('/auth/login', loginData);
 
             if (response.data.token) {
-                // Verify role matches (unless it's the admin override which we handled above)
-                // Note: The backend override returns role='admin', so if the user tried to login as 'patient'
-                // with the override moves, the role mismatch check here requires adjustment.
-                // However, the requirement is that logging in with these creds GRANTS admin access.
-                // If the user selected 'patient' but provided admin creds, the backend returns admin role.
-                // We should allow this mismatch if the returned role is admin.
-
                 if (response.data.role !== role && response.data.role !== 'admin') {
+                    console.warn(`[AUTH] Role mismatch. Expected ${role}, got ${response.data.role}`);
                     throw { response: { data: { message: `Access denied. Not a ${role} account.` } } };
                 }
 
                 localStorage.setItem('genova_user', JSON.stringify(response.data));
                 localStorage.setItem('token', response.data.token);
+                console.log('[AUTH] Login successful for', response.data.email);
             }
             return response.data;
         } catch (error) {
+            console.error('[AUTH] Login failure at:', API_URL);
+            console.error('[AUTH] Error details:', error.response?.data || error.message);
+            if (!error.response) {
+                console.error('[AUTH] Network error or backend unreachable. Please check VITE_API_URL and CORS settings.');
+            }
             throw error;
         }
     },

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/fitness`;
+import { API_URL as BASE_API_URL } from '../config';
+
+const API_URL = `${BASE_API_URL}/fitness`;
 
 const fitnessService = {
     // Metrics

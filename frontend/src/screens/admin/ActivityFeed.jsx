@@ -4,6 +4,7 @@ import Card from '../../components/ui/Card';
 import { useToast } from '../../components/ui/Toast';
 import { SkeletonCard } from '../../components/ui/Loading';
 import EmptyState from '../../components/ui/EmptyState';
+import { API_URL } from '../../config';
 
 const ActivityFeed = () => {
     const [activities, setActivities] = useState({ prescriptions: [], deliveries: [], chats: [] });
@@ -19,7 +20,7 @@ const ActivityFeed = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/activity`, {
+            const response = await fetch(`${API_URL}/admin/activity`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
