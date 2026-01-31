@@ -51,6 +51,17 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/driver', driverLocationRoutes);
+
+// Health check endpoint for monitoring platforms
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'UP',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV
+    });
+});
 
 app.get('/', (req, res) => {
     res.send('Genova Health API is running');
@@ -137,6 +148,24 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!' });
 });
 
-server.listen(PORT, () => {
+const serverInstance = server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+// Graceful shutdown handling
+const gracefulShutdown = () => {
+    console.log('Received shutdown signal. Closing server...');
+    serverInstance.close(() => {
+        console.log('Server closed. Exiting process.');
+        process.exit(0);
+    });
+
+    // Force exit after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
