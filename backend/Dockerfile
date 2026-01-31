@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install necessary system dependencies for Prisma
+RUN apk add --no-cache openssl
+
 # Copy package files first for better layer caching
 COPY package*.json ./
 
